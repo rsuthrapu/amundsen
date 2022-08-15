@@ -27,6 +27,7 @@ from databuilder.publisher.elasticsearch_publisher import ElasticsearchPublisher
 from databuilder.publisher.neo4j_csv_publisher import Neo4jCsvPublisher
 from databuilder.task.task import DefaultTask
 from databuilder.transformer.base_transformer import NoopTransformer
+from sqlalchemy.dialects import oracle
 
 es_host = None
 neo_host = None
@@ -51,26 +52,26 @@ LOGGER = logging.getLogger(__name__)
 
 # todo: connection string needs to change
 def connection_string():
-    user = 'username'
-    password = 'password'
-    host = 'localhost'
-    port = '1521'
-    service = 'service'
+    user = ''
+    password = ''
+    host = ''
+    port = ''
+    service = ''
     return "oracle+cx_oracle://%s:%s@%s:%s/%s" % (user, password, host, port, service)
-
-
+ 
 def run_oracle_job():
     where_clause_suffix = textwrap.dedent("""
-        where table_schema = 'public'
+        where c.owner = 'RSUTHRAP'
     """)
-
+     #CIGADMIN
     tmp_folder = '/var/tmp/amundsen/table_metadata'
     node_files_folder = f'{tmp_folder}/nodes/'
     relationship_files_folder = f'{tmp_folder}/relationships/'
 
+    # xxxxxxx - Replace your Password .
     job_config = ConfigFactory.from_dict({
         f'extractor.oracle_metadata.{OracleMetadataExtractor.WHERE_CLAUSE_SUFFIX_KEY}': where_clause_suffix,
-        f'extractor.oracle_metadata.extractor.sqlalchemy.{SQLAlchemyExtractor.CONN_STRING}': connection_string(),
+        f'extractor.oracle_metadata.extractor.sqlalchemy.{SQLAlchemyExtractor.CONN_STRING}': 'oracle+cx_oracle://rsuthrap:xxxxxxx@rhqa1.ciginsurance.com:53759/?service_name=oscar&encoding=UTF-8&nencoding=UTF-8',
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.NODE_DIR_PATH}': node_files_folder,
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.RELATION_DIR_PATH}': relationship_files_folder,
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.SHOULD_DELETE_CREATED_DIR}': True,
@@ -150,7 +151,7 @@ def create_es_publisher_sample_job(elasticsearch_index_alias='table_search_index
 
 if __name__ == "__main__":
     # Uncomment next line to get INFO level logging
-    # logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
 
     loading_job = run_oracle_job()
     loading_job.launch()
