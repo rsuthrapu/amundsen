@@ -54,7 +54,7 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
     which requires libcurl and other native libraries which is a pain to install.
     """
 
-    def __init__(self, *, host: str, port: Optional[int] = None, user: str = None,
+    def __init__(self, *, host: str, port: Optional[int] = None, user: Optional[str] = None,
                  password: Optional[Union[str, boto3.session.Session]] = None,
                  driver_remote_connection_options: Mapping[str, Any] = {},
                  client_kwargs: Dict = dict(),
@@ -106,9 +106,13 @@ class NeptuneGremlinProxy(AbstractGremlinProxy):
         except Exception:
             raise NotImplementedError(f'Cannot find s3 bucket name!')
 
+        # Get custom sts endpoint, default None
+        sts_endpoint = client_kwargs['sts_endpoint']
+
         # Instantiate bulk loader and graph traversal factory
         bulk_loader_config: Dict[str, Any] = dict(NEPTUNE_SESSION=password, NEPTUNE_URL=host,
-                                                  NEPTUNE_BULK_LOADER_S3_BUCKET_NAME=s3_bucket_name)
+                                                  NEPTUNE_BULK_LOADER_S3_BUCKET_NAME=s3_bucket_name,
+                                                  STS_ENDPOINT=sts_endpoint)
         self.neptune_bulk_loader_api = NeptuneBulkLoaderApi.create_from_config(bulk_loader_config)
         self.neptune_graph_traversal_source_factory = get_neptune_graph_traversal_source_factory(session=password,
                                                                                                  neptune_url=host)

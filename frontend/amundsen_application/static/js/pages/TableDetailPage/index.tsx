@@ -11,6 +11,7 @@ import { RouteComponentProps } from 'react-router';
 import { GlobalState } from 'ducks/rootReducer';
 import { getTableData } from 'ducks/tableMetadata/reducer';
 import { getTableColumnLineage, getTableLineage } from 'ducks/lineage/reducer';
+import { getNotices } from 'ducks/notices';
 import { openRequestDescriptionDialog } from 'ducks/notification/reducer';
 import { updateSearchState } from 'ducks/search/reducer';
 import { GetTableDataRequest } from 'ducks/tableMetadata/types';
@@ -19,6 +20,7 @@ import {
   GetTableLineageRequest,
 } from 'ducks/lineage/types';
 import { OpenRequestAction } from 'ducks/notification/types';
+import { GetNoticesRequest } from 'ducks/notices/types';
 import { UpdateSearchStateRequest } from 'ducks/search/types';
 
 import {
@@ -26,37 +28,41 @@ import {
   getMaxLength,
   getSourceIconClass,
   getResourceNotices,
+  getDynamicNoticesEnabledByResource,
   getTableSortCriterias,
   indexDashboardsEnabled,
   issueTrackingEnabled,
   isTableListLineageEnabled,
+  isColumnListLineageEnabled,
   notificationsEnabled,
   isTableQualityCheckEnabled,
+  getTableLineageDefaultDepth,
 } from 'config/config-utils';
+import { NoticeType, NoticeSeverity } from 'config/config-types';
 
 import BadgeList from 'features/BadgeList';
 import ColumnList from 'features/ColumnList';
 import ColumnDetailsPanel from 'features/ColumnList/ColumnDetailsPanel';
 
-import Alert from 'components/Alert';
+import { AlertList } from 'components/Alert';
 import BookmarkIcon from 'components/Bookmark/BookmarkIcon';
-import Breadcrumb from 'components/Breadcrumb';
+import Breadcrumb from 'features/Breadcrumb';
 import EditableSection from 'components/EditableSection';
 import EditableText from 'components/EditableText';
 import TabsComponent, { TabInfo } from 'components/TabsComponent';
 import { TAB_URL_PARAM } from 'components/TabsComponent/constants';
-import TagInput from 'components/Tags/TagInput';
+import TagInput from 'features/Tags/TagInput';
 import LoadingSpinner from 'components/LoadingSpinner';
 
 import { logAction, logClick } from 'utils/analytics';
-import { formatDateTimeShort } from 'utils/dateUtils';
+import { formatDateTimeShort } from 'utils/date';
 import {
   buildTableKey,
   getLoggingParams,
   getUrlParam,
   setUrlParam,
   TablePageParams,
-} from 'utils/navigationUtils';
+} from 'utils/navigation';
 
 import {
   ProgrammaticDescription,
@@ -66,6 +72,7 @@ import {
   SortCriteria,
   Lineage,
   TableApp,
+  DynamicResourceNotice,
 } from 'interfaces';
 import { FormattedDataType } from 'interfaces/ColumnList';
 
@@ -91,14 +98,42 @@ import ListSortingDropdown from './ListSortingDropdown';
 
 import * as Constants from './constants';
 import { AIRFLOW, DATABRICKS } from './ApplicationDropdown/constants';
+import { STATUS_CODES } from '../../constants';
 
 import './styles.scss';
 
-const SERVER_ERROR_CODE = 500;
 const DASHBOARDS_PER_PAGE = 10;
 const TABLE_SOURCE = 'table_page';
 const SORT_CRITERIAS = {
   ...getTableSortCriterias(),
+};
+const SEVERITY_TO_NOTICE_SEVERITY = {
+  0: NoticeSeverity.INFO,
+  1: NoticeSeverity.WARNING,
+  2: NoticeSeverity.ALERT,
+};
+
+/**
+ * Merges the dynamic and static notices, doing a type matching for dynamic ones
+ * @param data            Table metadata
+ * @param notices         Dynamic notices
+ * @returns NoticeType[]  Aggregated notices
+ */
+const aggregateResourceNotices = (
+  data: TableMetadata,
+  notices: DynamicResourceNotice[]
+): NoticeType[] => {
+  const staticNotice = getResourceNotices(
+    ResourceType.table,
+    `${data.cluster}.${data.database}.${data.schema}.${data.name}`
+  );
+  const dynamicNotices: NoticeType[] = notices.map((notice) => ({
+    severity: SEVERITY_TO_NOTICE_SEVERITY[notice.severity],
+    messageHtml: notice.message,
+    payload: notice.payload,
+  }));
+
+  return staticNotice ? [...dynamicNotices, staticNotice] : dynamicNotices;
 };
 
 export interface PropsFromState {
@@ -108,6 +143,9 @@ export interface PropsFromState {
   statusCode: number | null;
   tableData: TableMetadata;
   tableLineage: Lineage;
+  isLoadingLineage: boolean;
+  notices: DynamicResourceNotice[];
+  isLoadingNotices: boolean;
 }
 export interface DispatchFromProps {
   getTableData: (
@@ -115,7 +153,11 @@ export interface DispatchFromProps {
     searchIndex?: string,
     source?: string
   ) => GetTableDataRequest;
-  getTableLineageDispatch: (key: string) => GetTableLineageRequest;
+  getTableLineageDispatch: (
+    key: string,
+    depth: number
+  ) => GetTableLineageRequest;
+  getNoticesDispatch: (key: string) => GetNoticesRequest;
   getColumnLineageDispatch: (
     key: string,
     columnName: string
@@ -141,7 +183,7 @@ export type TableDetailProps = PropsFromState &
 const ErrorMessage = () => (
   <div className="container error-label">
     <Breadcrumb />
-    <label>{Constants.ERROR_MESSAGE}</label>
+    <span className="text-subtitle-w1">{Constants.ERROR_MESSAGE}</span>
   </div>
 );
 
@@ -176,17 +218,29 @@ export class TableDetail extends React.Component<
   };
 
   componentDidMount() {
-    const { location, getTableData, getTableLineageDispatch } = this.props;
+    const defaultDepth = getTableLineageDefaultDepth();
+    const {
+      location,
+      getTableData,
+      getTableLineageDispatch,
+      getNoticesDispatch,
+    } = this.props;
     const { index, source } = getLoggingParams(location.search);
     const {
       match: { params },
     } = this.props;
+
     this.key = buildTableKey(params);
     getTableData(this.key, index, source);
 
     if (isTableListLineageEnabled()) {
-      getTableLineageDispatch(this.key);
+      getTableLineageDispatch(this.key, defaultDepth);
     }
+
+    if (getDynamicNoticesEnabledByResource(ResourceType.table)) {
+      getNoticesDispatch(this.key);
+    }
+
     document.addEventListener('keydown', this.handleEscKey);
     window.addEventListener(
       'resize',
@@ -196,9 +250,11 @@ export class TableDetail extends React.Component<
   }
 
   componentDidUpdate() {
+    const defaultDepth = getTableLineageDefaultDepth();
     const {
       location,
       getTableData,
+      getNoticesDispatch,
       getTableLineageDispatch,
       match: { params },
     } = this.props;
@@ -210,9 +266,14 @@ export class TableDetail extends React.Component<
       this.key = newKey;
       getTableData(this.key, index, source);
 
-      if (isTableListLineageEnabled()) {
-        getTableLineageDispatch(this.key);
+      if (getDynamicNoticesEnabledByResource(ResourceType.table)) {
+        getNoticesDispatch(this.key);
       }
+
+      if (isTableListLineageEnabled()) {
+        getTableLineageDispatch(this.key, defaultDepth);
+      }
+      // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ currentTab: this.getDefaultTab() });
     }
   }
@@ -225,7 +286,7 @@ export class TableDetail extends React.Component<
     );
   }
 
-  handleEscKey = (event) => {
+  handleEscKey = (event: KeyboardEvent) => {
     const { isRightPanelOpen } = this.state;
 
     if (event.key === Constants.ESC_BUTTON_KEY && isRightPanelOpen) {
@@ -321,10 +382,12 @@ export class TableDetail extends React.Component<
     }
 
     let key = '';
+
     if (columnDetails) {
       ({ key } = columnDetails);
-      if (!columnDetails.isNestedColumn) {
+      if (isColumnListLineageEnabled() && !columnDetails.isNestedColumn) {
         const { name, tableParams } = columnDetails;
+
         getColumnLineageDispatch(buildTableKey(tableParams), name);
       }
     }
@@ -344,6 +407,7 @@ export class TableDetail extends React.Component<
     const { getColumnLineageDispatch } = this.props;
 
     let key = '';
+
     if (newColumnDetails) {
       ({ key } = newColumnDetails);
     }
@@ -352,11 +416,13 @@ export class TableDetail extends React.Component<
       (key && key !== selectedColumnKey) || !isRightPanelOpen;
 
     if (
+      isColumnListLineageEnabled() &&
       shouldPanelOpen &&
       newColumnDetails &&
       !newColumnDetails.isNestedColumn
     ) {
       const { name, tableParams } = newColumnDetails;
+
       getColumnLineageDispatch(buildTableKey(tableParams), name);
     }
 
@@ -378,15 +444,17 @@ export class TableDetail extends React.Component<
 
   hasColumnsToExpand = () => {
     const { tableData } = this.props;
+
     return tableData.columns.some((col) => col.type_metadata?.children?.length);
   };
 
-  renderTabs(editText, editUrl) {
+  renderTabs(editText: string, editUrl: string | null) {
     const tabInfo: TabInfo[] = [];
     const {
       isLoadingDashboards,
       numRelatedDashboards,
       tableData,
+      isLoadingLineage,
       tableLineage,
     } = this.props;
     const {
@@ -412,7 +480,7 @@ export class TableDetail extends React.Component<
           database={tableData.database}
           tableParams={tableParams}
           editText={editText}
-          editUrl={editUrl}
+          editUrl={editUrl || undefined}
           sortBy={sortedBy}
           preExpandPanelKey={
             selectedColumn ? tableData.key + '/' + selectedColumn : undefined
@@ -452,30 +520,56 @@ export class TableDetail extends React.Component<
     }
 
     if (isTableListLineageEnabled()) {
-      if (tableLineage.upstream_entities.length > 0) {
-        tabInfo.push({
-          content: (
-            <LineageList
-              items={tableLineage.upstream_entities}
-              direction="upstream"
-            />
-          ),
-          key: Constants.TABLE_TAB.UPSTREAM,
-          title: `Upstream (${tableLineage.upstream_entities.length})`,
-        });
-      }
-      if (tableLineage.downstream_entities.length > 0) {
-        tabInfo.push({
-          content: (
-            <LineageList
-              items={tableLineage.downstream_entities}
-              direction="downstream"
-            />
-          ),
-          key: Constants.TABLE_TAB.DOWNSTREAM,
-          title: `Downstream (${tableLineage.downstream_entities.length})`,
-        });
-      }
+      const upstreamLoadingTitle = isLoadingLineage ? (
+        <div className="tab-title is-loading">
+          Upstream <LoadingSpinner />
+        </div>
+      ) : (
+        `Upstream (${
+          tableLineage.upstream_count || tableLineage.upstream_entities.length
+        })`
+      );
+      const upstreamLineage = isLoadingLineage
+        ? []
+        : tableLineage.upstream_entities;
+
+      tabInfo.push({
+        content: (
+          <LineageList
+            items={upstreamLineage}
+            direction="upstream"
+            tableDetails={tableData}
+          />
+        ),
+        key: Constants.TABLE_TAB.UPSTREAM,
+        title: upstreamLoadingTitle,
+      });
+
+      const downstreamLoadingTitle = isLoadingLineage ? (
+        <div className="tab-title is-loading">
+          Downstream <LoadingSpinner />
+        </div>
+      ) : (
+        `Downstream (${
+          tableLineage.downstream_count ||
+          tableLineage.downstream_entities.length
+        })`
+      );
+      const downstreamLineage = isLoadingLineage
+        ? []
+        : tableLineage.downstream_entities;
+
+      tabInfo.push({
+        content: (
+          <LineageList
+            items={downstreamLineage}
+            direction="downstream"
+            tableDetails={tableData}
+          />
+        ),
+        key: Constants.TABLE_TAB.DOWNSTREAM,
+        title: downstreamLoadingTitle,
+      });
     }
 
     return (
@@ -500,10 +594,8 @@ export class TableDetail extends React.Component<
   }
 
   renderColumnTabActionButtons(isRightPanelOpen, sortedBy) {
-    const {
-      areNestedColumnsExpanded,
-      isExpandCollapseAllBtnVisible,
-    } = this.state;
+    const { areNestedColumnsExpanded, isExpandCollapseAllBtnVisible } =
+      this.state;
 
     return (
       <div
@@ -541,15 +633,18 @@ export class TableDetail extends React.Component<
 
     const hasNoAppsOrWriter =
       (tableApps === null || tableApps.length === 0) && tableWriter === null;
+
     if (hasNoAppsOrWriter) {
       return null;
     }
     const hasNonEmptyTableApps = tableApps !== null && tableApps.length > 0;
+
     if (hasNonEmptyTableApps) {
       apps = [...tableApps];
     }
     const hasWriterWithUniqueId =
       tableWriter !== null && !apps.some((app) => app.id === tableWriter.id);
+
     if (hasWriterWithUniqueId) {
       apps = [...apps, tableWriter];
     }
@@ -582,19 +677,16 @@ export class TableDetail extends React.Component<
   }
 
   render() {
-    const { isLoading, statusCode, tableData } = this.props;
-    const {
-      sortedBy,
-      currentTab,
-      isRightPanelOpen,
-      selectedColumnDetails,
-    } = this.state;
-    let innerContent;
+    const { isLoading, isLoadingNotices, notices, statusCode, tableData } =
+      this.props;
+    const { sortedBy, currentTab, isRightPanelOpen, selectedColumnDetails } =
+      this.state;
+    let innerContent: React.ReactNode;
 
     // We want to avoid rendering the previous table's metadata before new data is fetched in componentDidMount
     if (isLoading || !this.didComponentMount) {
       innerContent = <LoadingSpinner />;
-    } else if (statusCode === SERVER_ERROR_CODE) {
+    } else if (statusCode === STATUS_CODES.INTERNAL_SERVER_ERROR) {
       innerContent = <ErrorMessage />;
     } else {
       const data = tableData;
@@ -611,10 +703,7 @@ export class TableDetail extends React.Component<
           )}`
         : '';
       const editUrl = data.source ? data.source.source : '';
-      const tableNotice = getResourceNotices(
-        ResourceType.table,
-        `${data.cluster}.${data.database}.${data.schema}.${data.name}`
-      );
+      const aggregatedTableNotices = aggregateResourceNotices(data, notices);
 
       innerContent = (
         <div className="resource-detail-layout table-detail">
@@ -666,11 +755,8 @@ export class TableDetail extends React.Component<
           </header>
           <div className="single-column-layout">
             <aside className="left-panel">
-              {!!tableNotice && (
-                <Alert
-                  message={tableNotice.messageHtml}
-                  severity={tableNotice.severity}
-                />
+              {!isLoadingNotices && (
+                <AlertList notices={aggregatedTableNotices} />
               )}
               <EditableSection
                 title={Constants.DESCRIPTION_TITLE}
@@ -789,6 +875,9 @@ export const mapStateToProps = (state: GlobalState) => ({
   statusCode: state.tableMetadata.statusCode,
   tableData: state.tableMetadata.tableData,
   tableLineage: state.lineage.lineageTree,
+  isLoadingLineage: state.lineage ? state.lineage.isLoading : true,
+  notices: state.notices.notices,
+  isLoadingNotices: state.notices ? state.notices.isLoading : false,
   numRelatedDashboards: state.tableMetadata.dashboards
     ? state.tableMetadata.dashboards.dashboards.length
     : 0,
@@ -802,6 +891,7 @@ export const mapDispatchToProps = (dispatch: any) =>
     {
       getTableData,
       getTableLineageDispatch: getTableLineage,
+      getNoticesDispatch: getNotices,
       getColumnLineageDispatch: getTableColumnLineage,
       openRequestDescriptionDialog,
       searchSchema: (schemaText: string) =>

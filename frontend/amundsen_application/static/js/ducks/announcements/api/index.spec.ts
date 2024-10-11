@@ -4,6 +4,8 @@ import { AnnouncementPost } from 'interfaces';
 
 import * as API from './v0';
 
+import { STATUS_CODES } from '../../../constants';
+
 jest.mock('axios');
 
 describe('getAnnouncements', () => {
@@ -23,14 +25,16 @@ describe('getAnnouncements', () => {
   describe('when success', () => {
     it('resolves with array of posts and status code', async () => {
       expect.assertions(1);
+
       mockResponse = {
         data: {
           posts: expectedPosts,
           msg: 'Success',
         },
-        status: 200,
+        status: STATUS_CODES.OK,
         statusText: '',
         headers: {},
+        // @ts-ignore
         config: {},
       };
       // @ts-ignore: TypeScript errors on Jest mock methods unless we extend AxiosStatic for tests
@@ -50,14 +54,16 @@ describe('getAnnouncements', () => {
   describe('when error', () => {
     it('catches error and resolves with object containing error code', async () => {
       expect.assertions(1);
+
       mockResponse = {
         data: {
           posts: [],
           msg: 'A client for retrieving announcements must be configured',
         },
-        status: 500,
+        status: STATUS_CODES.INTERNAL_SERVER_ERROR,
         statusText: '',
         headers: {},
+        // @ts-ignore
         config: {},
       };
       // @ts-ignore: TypeScript errors on Jest mock methods unless we extend AxiosStatic for tests

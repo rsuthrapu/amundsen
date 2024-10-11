@@ -11,6 +11,7 @@ import {
   RemoveBookmarkRequest,
 } from 'ducks/bookmark/types';
 import { GlobalState } from 'ducks/rootReducer';
+import { logClick } from 'utils/analytics';
 
 import { ResourceType } from 'interfaces';
 
@@ -38,32 +39,43 @@ export class BookmarkIcon extends React.Component<BookmarkIconProps> {
     large: false,
   };
 
-  handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    event.stopPropagation();
-    event.preventDefault();
+  handleClick = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const {
+      isBookmarked,
+      removeBookmark,
+      bookmarkKey,
+      resourceType,
+      addBookmark,
+    } = this.props;
 
-    if (this.props.isBookmarked) {
-      this.props.removeBookmark(
-        this.props.bookmarkKey,
-        this.props.resourceType
-      );
+    if (isBookmarked) {
+      logClick(e, {
+        label: 'Remove Bookmark',
+        target_id: `remove-${resourceType}-bookmark-button`,
+      });
+      removeBookmark(bookmarkKey, resourceType);
     } else {
-      this.props.addBookmark(this.props.bookmarkKey, this.props.resourceType);
+      logClick(e, {
+        label: 'Add Bookmark',
+        target_id: `add-${resourceType}-bookmark-button`,
+      });
+      addBookmark(bookmarkKey, resourceType);
     }
   };
 
   render() {
+    const { large, isBookmarked } = this.props;
+
     return (
       <div
-        className={
-          'bookmark-icon ' + (this.props.large ? 'bookmark-large' : '')
-        }
+        className={'bookmark-icon ' + (large ? 'bookmark-large' : '')}
         onClick={this.handleClick}
       >
         <img
           className={
-            'icon ' +
-            (this.props.isBookmarked ? 'icon-bookmark-filled' : 'icon-bookmark')
+            'icon ' + (isBookmarked ? 'icon-bookmark-filled' : 'icon-bookmark')
           }
           alt=""
         />

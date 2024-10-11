@@ -6,6 +6,8 @@ import { PopularResource, ResourceDict } from 'interfaces';
 
 import * as API from '../v0';
 
+import { STATUS_CODES } from '../../../../constants';
+
 jest.mock('axios');
 
 describe('getPopularTables', () => {
@@ -19,9 +21,10 @@ describe('getPopularTables', () => {
         results: expectedResources,
         msg: 'Success',
       },
-      status: 200,
+      status: STATUS_CODES.OK,
       statusText: '',
       headers: {},
+      // @ts-ignore
       config: {},
     };
     jest
@@ -31,6 +34,7 @@ describe('getPopularTables', () => {
 
   it('resolves with array of table resources from response.data on success', async () => {
     expect.assertions(1);
+
     await API.getPopularResources().then((results) => {
       expect(results).toEqual(expectedResources);
     });

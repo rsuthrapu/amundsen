@@ -23,13 +23,16 @@ import reducer, {
 } from 'ducks/feature/reducer';
 import { featureMetadata } from 'fixtures/metadata/feature';
 
+import { STATUS_CODES } from '../../constants';
+
 describe('feature reducer', () => {
   let testState: FeatureReducerState;
+
   beforeEach(() => {
     testState = {
       isLoading: false,
       isLoadingOwners: false,
-      statusCode: 200,
+      statusCode: STATUS_CODES.OK,
       feature: initialFeatureState,
       featureCode: initialFeatureCodeState,
       featureLineage: initialFeatureLineageState,
@@ -55,13 +58,13 @@ describe('feature reducer', () => {
         testState,
         getFeatureSuccess({
           feature: featureMetadata,
-          statusCode: 202,
+          statusCode: STATUS_CODES.ACCEPTED,
         })
       )
     ).toEqual({
       ...testState,
       isLoading: false,
-      statusCode: 202,
+      statusCode: STATUS_CODES.ACCEPTED,
       feature: featureMetadata,
       featureCode: initialFeatureCodeState,
     });
@@ -72,13 +75,13 @@ describe('feature reducer', () => {
       reducer(
         testState,
         getFeatureFailure({
-          statusCode: 500,
+          statusCode: STATUS_CODES.INTERNAL_SERVER_ERROR,
         })
       )
     ).toEqual({
       ...testState,
       isLoading: false,
-      statusCode: 500,
+      statusCode: STATUS_CODES.INTERNAL_SERVER_ERROR,
       feature: initialFeatureState,
       featureCode: initialFeatureCodeState,
     });
@@ -102,7 +105,7 @@ describe('feature reducer', () => {
         source: 'testSource',
         text: 'testText',
       },
-      statusCode: 202,
+      statusCode: STATUS_CODES.ACCEPTED,
     };
 
     expect(reducer(testState, getFeatureCodeSuccess(response))).toEqual({
@@ -120,14 +123,14 @@ describe('feature reducer', () => {
       reducer(
         testState,
         getFeatureCodeFailure({
-          statusCode: 500,
+          statusCode: STATUS_CODES.INTERNAL_SERVER_ERROR,
         })
       )
     ).toEqual({
       ...testState,
       featureCode: {
         featureCode: emptyFeatureCode,
-        statusCode: 500,
+        statusCode: STATUS_CODES.INTERNAL_SERVER_ERROR,
         isLoading: false,
       },
     });
@@ -139,6 +142,7 @@ describe('feature reducer', () => {
       feature_group: 'group',
       version: '3',
     };
+
     expect(reducer(testState, getFeaturePreviewData(request))).toEqual({
       ...testState,
       preview: {
@@ -156,7 +160,7 @@ describe('feature reducer', () => {
         data: [],
         error_text: '',
       },
-      status: 202,
+      status: STATUS_CODES.ACCEPTED,
     };
 
     expect(reducer(testState, getFeaturePreviewDataSuccess(response))).toEqual({
@@ -174,7 +178,7 @@ describe('feature reducer', () => {
       previewData: {
         error_text: 'error message',
       },
-      status: 502,
+      status: STATUS_CODES.BAD_GATEWAY,
     };
 
     expect(reducer(testState, getFeaturePreviewDataFailure(response))).toEqual({
@@ -190,8 +194,9 @@ describe('feature reducer', () => {
   it('should handle GetFeatureDescription.SUCCESS', () => {
     const response = {
       description: 'testDescription',
-      statusCode: 200,
+      statusCode: STATUS_CODES.OK,
     };
+
     expect(reducer(testState, getFeatureDescriptionSuccess(response))).toEqual({
       ...testState,
       feature: {
@@ -204,8 +209,9 @@ describe('feature reducer', () => {
   it('should handle GetFeatureDescription.FAILURE', () => {
     const response = {
       description: 'testDescription',
-      statusCode: 500,
+      statusCode: STATUS_CODES.INTERNAL_SERVER_ERROR,
     };
+
     expect(reducer(testState, getFeatureDescriptionSuccess(response))).toEqual({
       ...testState,
       feature: {
@@ -218,8 +224,9 @@ describe('feature reducer', () => {
   it('should handle UpdateFeatureDescription.SUCCESS', () => {
     const response = {
       description: 'testDescription',
-      statusCode: 200,
+      statusCode: STATUS_CODES.OK,
     };
+
     expect(
       reducer(testState, updateFeatureDescriptionSuccess(response))
     ).toEqual({
@@ -234,8 +241,9 @@ describe('feature reducer', () => {
   it('should handle UpdateFeatureDescription.FAILURE', () => {
     const response = {
       description: 'testDescription',
-      statusCode: 200,
+      statusCode: STATUS_CODES.OK,
     };
+
     expect(
       reducer(testState, updateFeatureDescriptionFailure(response))
     ).toEqual({

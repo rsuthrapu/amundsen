@@ -16,9 +16,11 @@ describe('Feedback', () => {
 
   const setup = (propOverrides?: Partial<FeedbackProps>) => {
     const props: FeedbackProps = {
+      theme: 'dark',
       ...propOverrides,
     };
     const wrapper = shallow<Feedback>(<Feedback {...props} />);
+
     return { props, wrapper };
   };
 
@@ -26,8 +28,7 @@ describe('Feedback', () => {
     let wrapper;
 
     beforeAll(() => {
-      const setupResult = setup();
-      wrapper = setupResult.wrapper;
+      ({ wrapper } = setup());
     });
 
     it('sets state.isOpen to false', () => {
@@ -59,13 +60,14 @@ describe('Feedback', () => {
     let wrapper;
 
     beforeAll(() => {
-      const setupResult = setup();
-      wrapper = setupResult.wrapper;
+      ({ wrapper } = setup());
+
       setStateSpy.mockClear();
     });
 
     it('returns method that calls setState with correct values if type === FeedbackType.Bug', () => {
       wrapper.instance().changeType(FeedbackType.Bug)();
+
       expect(setStateSpy).toHaveBeenCalledWith({
         content: <BugReportFeedbackForm />,
         feedbackType: FeedbackType.Bug,
@@ -74,6 +76,7 @@ describe('Feedback', () => {
 
     it('returns method that calls setState with correct values if type === FeedbackType.Rating', () => {
       wrapper.instance().changeType(FeedbackType.Rating)();
+
       expect(setStateSpy).toHaveBeenCalledWith({
         content: <RatingFeedbackForm />,
         feedbackType: FeedbackType.Rating,
@@ -82,6 +85,7 @@ describe('Feedback', () => {
 
     it('returns method that calls setState with correct values if type === FeedbackType.Request', () => {
       wrapper.instance().changeType(FeedbackType.Request)();
+
       expect(setStateSpy).toHaveBeenCalledWith({
         content: <RequestFeedbackForm />,
         feedbackType: FeedbackType.Request,
@@ -99,9 +103,8 @@ describe('Feedback', () => {
       let changeTypeMockResult;
 
       beforeAll(() => {
-        const setupResult = setup({ title: 'I am a title' });
-        props = setupResult.props;
-        wrapper = setupResult.wrapper;
+        ({ wrapper, props } = setup({ title: 'I am a title' }));
+
         wrapper.instance().toggle();
 
         changeTypeMockResult = jest.fn(() => {});
@@ -129,11 +132,14 @@ describe('Feedback', () => {
       describe('correct feedback-header', () => {
         let button;
         let title;
+
         beforeAll(() => {
           const header = feedbackComponent.children().at(0);
+
           title = header.children().at(0);
           button = header.children().at(1);
         });
+
         it('renders correct title', () => {
           expect(title.text()).toEqual(props.title);
         });
@@ -150,10 +156,12 @@ describe('Feedback', () => {
       describe('correct feedback button group', () => {
         let buttonGroupParent;
         let buttonGroup;
+
         beforeAll(() => {
           buttonGroupParent = feedbackComponent.children().at(1);
           buttonGroup = buttonGroupParent.children().at(0);
         });
+
         it('renders button group parent with correct className', () => {
           expect(buttonGroupParent.props().className).toEqual('text-center');
         });
@@ -167,6 +175,7 @@ describe('Feedback', () => {
 
         describe('renders correct rating button', () => {
           let button;
+
           beforeAll(() => {
             wrapper.setState({ feedbackType: FeedbackType.Rating });
             button = wrapper
@@ -179,6 +188,7 @@ describe('Feedback', () => {
               .find('button')
               .at(0);
           });
+
           it('has correct props if active', () => {
             expect(button.props()).toMatchObject({
               type: 'button',
@@ -202,6 +212,7 @@ describe('Feedback', () => {
               .at(0)
               .find('button')
               .at(0);
+
             expect(button.props()).toMatchObject({
               type: 'button',
               className: 'btn btn-default',
@@ -212,6 +223,7 @@ describe('Feedback', () => {
 
         describe('renders correct bug report button', () => {
           let button;
+
           beforeAll(() => {
             wrapper.setState({ feedbackType: FeedbackType.Bug });
             button = wrapper
@@ -224,6 +236,7 @@ describe('Feedback', () => {
               .find('button')
               .at(1);
           });
+
           it('has correct props if active', () => {
             expect(button.props()).toMatchObject({
               type: 'button',
@@ -247,6 +260,7 @@ describe('Feedback', () => {
               .at(0)
               .find('button')
               .at(1);
+
             expect(button.props()).toMatchObject({
               type: 'button',
               className: 'btn btn-default',
@@ -257,6 +271,7 @@ describe('Feedback', () => {
 
         describe('renders correct request button', () => {
           let button;
+
           beforeAll(() => {
             wrapper.setState({ feedbackType: FeedbackType.Request });
             button = wrapper
@@ -269,6 +284,7 @@ describe('Feedback', () => {
               .find('button')
               .at(2);
           });
+
           it('has correct props if active', () => {
             expect(button.props()).toMatchObject({
               type: 'button',
@@ -292,6 +308,7 @@ describe('Feedback', () => {
               .at(0)
               .find('button')
               .at(2);
+
             expect(button.props()).toMatchObject({
               type: 'button',
               className: 'btn btn-default',
@@ -322,12 +339,12 @@ describe('Feedback', () => {
       let wrapper;
 
       beforeAll(() => {
-        const setupResult = setup();
-        wrapper = setupResult.wrapper;
+        ({ wrapper } = setup());
       });
 
       it('renders help button with correct props', () => {
         const feedbackIcon = wrapper.children().at(0);
+
         expect(feedbackIcon.exists()).toBe(true);
         expect(feedbackIcon.props().className).toEqual(
           'btn btn-flat-icon btn-nav-bar-icon'

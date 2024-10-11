@@ -3,23 +3,27 @@
 
 import * as React from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
-import EditableSection from 'components/EditableSection';
+
+import RequestDescriptionText from 'pages/TableDetailPage/RequestDescriptionText';
 import BadgeList from 'features/BadgeList';
 import ColumnDescEditableText from 'features/ColumnList/ColumnDescEditableText';
 import ColumnLineage from 'features/ColumnList/ColumnLineage';
 import ColumnType from 'features/ColumnList/ColumnType';
 import ColumnStats from 'features/ColumnList/ColumnStats';
 import ExpandableUniqueValues from 'features/ExpandableUniqueValues';
+
+import EditableSection from 'components/EditableSection';
+
 import { FormattedDataType } from 'interfaces/ColumnList';
 import { RequestMetadataType } from 'interfaces/Notifications';
-import RequestDescriptionText from 'pages/TableDetailPage/RequestDescriptionText';
 import {
   getMaxLength,
   isColumnListLineageEnabled,
   notificationsEnabled,
 } from 'config/config-utils';
-import { buildTableKey, getColumnLink } from 'utils/navigationUtils';
+import { buildTableKey, getColumnLink } from 'utils/navigation';
 import { filterOutUniqueValues, getUniqueValues } from 'utils/stats';
+import { logClick } from 'utils/analytics';
 import {
   COPY_COL_LINK_LABEL,
   COPY_COL_NAME_LABEL,
@@ -36,18 +40,21 @@ export interface ColumnDetailsPanelProps {
 
 const shouldRenderDescription = (columnDetails: FormattedDataType) => {
   const { content, editText, editUrl, isEditable } = columnDetails;
+
   if (content.description) {
     return true;
   }
   if (!editText && !editUrl && !isEditable) {
     return false;
   }
+
   return true;
 };
 
 const getColumnNamePath = (key, tableParams) => {
   const tableKey = buildTableKey(tableParams);
   const columnNamePath = key.replace(tableKey + '/', '');
+
   return columnNamePath;
 };
 
@@ -70,6 +77,7 @@ const ColumnDetailsPanel: React.FC<ColumnDetailsPanelProps> = ({
   } = columnDetails;
 
   const panelRef = React.useRef<HTMLButtonElement>(null);
+
   React.useEffect(() => {
     if (panelRef.current !== null) {
       panelRef.current.focus();
@@ -82,15 +90,24 @@ const ColumnDetailsPanel: React.FC<ColumnDetailsPanelProps> = ({
     <Popover id="popover-click">{COPIED_TO_CLIPBOARD_TEXT}</Popover>
   );
 
-  const handleCloseButtonClick = () => {
+  const handleCloseButtonClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     togglePanel(undefined);
+    logClick(e, {
+      label: 'Close Column Info',
+    });
   };
 
-  const handleCopyNameClick = () => {
+  const handleCopyNameClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    logClick(e, {
+      label: 'Copy Column Name',
+    });
     navigator.clipboard.writeText(getColumnNamePath(key, tableParams));
   };
 
-  const handleCopyLinkClick = () => {
+  const handleCopyLinkClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    logClick(e, {
+      label: 'Copy Column Link',
+    });
     navigator.clipboard.writeText(
       getColumnLink(tableParams, getColumnNamePath(key, tableParams))
     );
@@ -104,6 +121,7 @@ const ColumnDetailsPanel: React.FC<ColumnDetailsPanelProps> = ({
           type="button"
           className="btn btn-close"
           onClick={handleCloseButtonClick}
+          data-type="close-column-info"
           ref={panelRef}
         >
           <span className="sr-only">{CLOSE_LABEL}</span>
@@ -121,6 +139,7 @@ const ColumnDetailsPanel: React.FC<ColumnDetailsPanelProps> = ({
             className="btn btn-default column-button"
             id="copy-col-name"
             type="button"
+            data-type="copy-column-name"
             onClick={handleCopyNameClick}
           >
             {COPY_COL_NAME_LABEL}
@@ -137,6 +156,7 @@ const ColumnDetailsPanel: React.FC<ColumnDetailsPanelProps> = ({
             className="btn btn-default"
             id="copy-col-link"
             type="button"
+            data-type="copy-column-link"
             onClick={handleCopyLinkClick}
           >
             {COPY_COL_LINK_LABEL}

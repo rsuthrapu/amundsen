@@ -75,6 +75,7 @@ export class ReportTableIssue extends React.Component<
     const { createIssue: createIssueInterface } = this.props;
     const createIssuePayload = this.getCreateIssuePayload(formData);
     const notificationPayload = this.getNotificationPayload();
+
     createIssueInterface(createIssuePayload, notificationPayload);
     this.setState({ isOpen: false });
   };
@@ -129,9 +130,8 @@ export class ReportTableIssue extends React.Component<
 
   toggle = (event) => {
     const { isOpen } = this.state;
-    if (!isOpen) {
-      logClick(event);
-    }
+
+    logClick(event);
     this.setState({ isOpen: !isOpen });
   };
 
@@ -168,6 +168,7 @@ export class ReportTableIssue extends React.Component<
         <a
           href="javascript:void(0)"
           className="body-link"
+          data-type="report-issues-link"
           onClick={this.toggle}
         >
           {Constants.REPORT_DATA_ISSUE_TEXT}
@@ -180,6 +181,7 @@ export class ReportTableIssue extends React.Component<
             <button
               type="button"
               className="btn btn-close"
+              data-type="report-issues-close"
               onClick={this.toggle}
             >
               <span className="sr-only">{Constants.CLOSE}</span>
@@ -254,6 +256,7 @@ export const mapStateToProps = (state: GlobalState) => {
     (reader) => reader.user.user_id
   );
   const userEmail = user.loggedInUser.email;
+
   return {
     userEmail,
     tableOwners: tableOwnersEmails,

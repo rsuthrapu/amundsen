@@ -50,11 +50,11 @@ class MySQLStalenessRemovalTask(Task):
     MIN_MS_TO_EXPIRE = "minimum_milliseconds_to_expire"
 
     _DEFAULT_CONFIG = ConfigFactory.from_dict({STALENESS_MAX_PCT: 5,
-                                              TARGET_TABLES: [],
-                                              STALENESS_PCT_MAX_DICT: {},
-                                              MIN_MS_TO_EXPIRE: 86400000,
-                                              DRY_RUN: False,
-                                              ENGINE_ECHO: False})
+                                               TARGET_TABLES: [],
+                                               STALENESS_PCT_MAX_DICT: {},
+                                               MIN_MS_TO_EXPIRE: 86400000,
+                                               DRY_RUN: False,
+                                               ENGINE_ECHO: False})
 
     def get_scope(self) -> str:
         return 'task.mysql_remove_stale_data'
@@ -97,7 +97,16 @@ class MySQLStalenessRemovalTask(Task):
         :return:
         """
         target_table_model_dict: Dict[str, Type[RDSModel]] = {}
-        for model in Base._decl_class_registry.values():
+
+        # Handle difference observed between Python 3.7 and other Python version runtimes:
+        if hasattr(Base, '_decl_class_registry'):
+            models_generator = Base._decl_class_registry.values()
+        elif hasattr(Base, 'registry'):
+            models_generator = Base.registry._class_registry.values()
+        else:
+            raise Exception(f'Failed to get models for target tables {target_tables}')
+
+        for model in models_generator:
             if hasattr(model, '__tablename__') and model.__tablename__ in target_tables:
                 target_table_model_dict[model.__tablename__] = model
         return target_table_model_dict
@@ -112,7 +121,7 @@ class MySQLStalenessRemovalTask(Task):
         referenced tables data which will be deleted in a cascade delete)
         :return:
         """
-        sorted_table_names = [table.name for table in Base.metadata.sorted_tables]
+        sorted_table_names = [table.name for table in Base.metadata.sorted_tables]  # type: ignore
         sorted_target_tables = sorted(
             self.target_tables, key=lambda table: sorted_table_names.index(table), reverse=True)
         try:

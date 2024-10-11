@@ -8,8 +8,8 @@ import BookmarkIcon from 'components/Bookmark/BookmarkIcon';
 
 import { getSourceDisplayName, getSourceIconClass } from 'config/config-utils';
 import { logClick } from 'utils/analytics';
-import { buildDashboardURL } from 'utils/navigationUtils';
-import { formatDate } from 'utils/dateUtils';
+import { buildDashboardURL } from 'utils/navigation';
+import { formatDate } from 'utils/date';
 
 import { ResourceType, DashboardResource } from 'interfaces';
 
@@ -42,6 +42,7 @@ class DashboardListItem extends React.Component<DashboardListItemProps, {}> {
 
   render() {
     const { dashboard, logging, dashboardHighlights } = this.props;
+
     return (
       <li className="list-group-item clickable">
         <Link

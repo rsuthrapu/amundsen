@@ -1,6 +1,6 @@
 import AppConfig from 'config/config';
 import { BadgeStyle, BadgeStyleConfig } from 'config/config-types';
-import { convertText, CaseType } from 'utils/textUtils';
+import { convertText, CaseType } from 'utils/text';
 
 import { TableMetadata } from 'interfaces/TableMetadata';
 import { ResourceType } from '../interfaces';
@@ -8,21 +8,30 @@ import {
   AnalyticsConfig,
   FilterConfig,
   LinkConfig,
+  VisualLinkConfig,
   NoticeType,
   TourConfig,
+  HomePageWidgetsConfig,
+  TableLineageConfig,
+  DateFormatConfig,
+  OwnersSectionConfig,
 } from './config-types';
 
+const DEFAULT_DYNAMIC_NOTICES_ENABLED_FLAG = false;
 export const DEFAULT_DATABASE_ICON_CLASS = 'icon-database icon-color';
 export const DEFAULT_DASHBOARD_ICON_CLASS = 'icon-dashboard icon-color';
 const WILDCARD_SIGN = '*';
 const RESOURCE_SEPARATOR = '.';
 const ANNOUNCEMENTS_LINK_LABEL = 'Announcements';
-const hasWildcard = (n) => n.indexOf(WILDCARD_SIGN) > -1;
-const withComputedMessage = (notice: NoticeType, resourceName) => {
+const hasWildcard = (n: string) => n.indexOf(WILDCARD_SIGN) > -1;
+const withComputedMessage = (notice: NoticeType, resourceName: string) => {
+  const result = { ...notice };
+
   if (typeof notice.messageHtml === 'function') {
-    notice.messageHtml = notice.messageHtml(resourceName);
+    result.messageHtml = notice.messageHtml(resourceName);
   }
-  return notice;
+
+  return result;
 };
 const resourceMatches = (key: string, resource: string) => {
   if (key === resource || key === WILDCARD_SIGN) {
@@ -31,6 +40,7 @@ const resourceMatches = (key: string, resource: string) => {
   if (key.includes(WILDCARD_SIGN)) {
     const wildcardIndex = key.indexOf(WILDCARD_SIGN);
     const inverseWildcardIndex = -1 * (key.length - wildcardIndex - 1);
+
     if (
       key.slice(0, wildcardIndex) === resource.slice(0, wildcardIndex) &&
       (wildcardIndex === key.length - 1 ||
@@ -40,6 +50,7 @@ const resourceMatches = (key: string, resource: string) => {
       return true;
     }
   }
+
   return false;
 };
 
@@ -53,6 +64,7 @@ export function getSourceDisplayName(
   resource: ResourceType
 ): string {
   const config = AppConfig.resourceConfig[resource];
+
   if (
     !config ||
     !config.supportedSources ||
@@ -75,6 +87,7 @@ export function getSourceIconClass(
   resource: ResourceType
 ): string {
   const config = AppConfig.resourceConfig[resource];
+
   if (
     !config ||
     !config.supportedSources ||
@@ -89,6 +102,7 @@ export function getSourceIconClass(
     if (resource === ResourceType.feature) {
       return DEFAULT_DATABASE_ICON_CLASS;
     }
+
     return '';
   }
 
@@ -111,6 +125,7 @@ export function getResourceNotices(
   }
 
   const wildcardNoticesKeys = Object.keys(notices).filter(hasWildcard);
+
   if (wildcardNoticesKeys.length) {
     const wildcardNoticesArray = new Array(1);
     let hasNotice: boolean = false;
@@ -132,11 +147,26 @@ export function getResourceNotices(
     });
     if (hasNotice) {
       const [noticeFromWildcard] = wildcardNoticesArray;
+
       return withComputedMessage(noticeFromWildcard, resourceName);
     }
   }
 
   return false;
+}
+
+/**
+ * Communicates whether dynamic notices via API requests is enabled for a given resource
+ * @param resourceType  Any resource type (except query)
+ * @returns             Whether if the resource has dynamic notices
+ */
+export function getDynamicNoticesEnabledByResource(
+  resourceType: Exclude<ResourceType, ResourceType.query>
+): boolean {
+  const { hasDynamicNoticesEnabled = DEFAULT_DYNAMIC_NOTICES_ENABLED_FLAG } =
+    AppConfig.resourceConfig[resourceType];
+
+  return hasDynamicNoticesEnabled;
 }
 
 /**
@@ -171,6 +201,16 @@ export function getUniqueValueStatTypeName(): string | undefined {
     ?.uniqueValueTypeName;
 }
 
+/**
+ * Returns the list of stat types where, if they are the only ones present, the stats icon will not be displayed
+ * This can be used for commonly occurring stats such as usage
+ * @returns string[] or undefined
+ */
+export function getIconNotRequiredStatTypes(): string[] | undefined {
+  return AppConfig.resourceConfig[ResourceType.table].stats
+    ?.iconNotRequiredTypes;
+}
+
 /*
  * Given a badge name, this will return a badge style and a display name.
  * If these are not specified by config, it will default to some simple rules:
@@ -184,6 +224,13 @@ export function getBadgeConfig(badgeName: string): BadgeStyleConfig {
     displayName: convertText(badgeName, CaseType.TITLE_CASE),
     ...config,
   };
+}
+
+/**
+ * Returns whether non-clickable badges should be hidden on the homepage
+ */
+export function hideNonClickableBadges(): boolean {
+  return AppConfig.browse.hideNonClickableBadges;
 }
 
 /**
@@ -242,6 +289,7 @@ export function getIssueDescriptionTemplate(): string | undefined {
  */
 export function issueTrackingProjectSelectionEnabled(): boolean {
   const config = AppConfig.issueTracking.projectSelection;
+
   return config ? config.enabled : false;
 }
 
@@ -250,6 +298,7 @@ export function issueTrackingProjectSelectionEnabled(): boolean {
  */
 export function getProjectSelectionTitle(): string {
   const config = AppConfig.issueTracking.projectSelection;
+
   return config ? config.title : '';
 }
 
@@ -258,6 +307,7 @@ export function getProjectSelectionTitle(): string {
  */
 export function getProjectSelectionHint(): string | undefined {
   const config = AppConfig.issueTracking.projectSelection;
+
   return config ? config.inputHint : '';
 }
 
@@ -288,7 +338,7 @@ export function getCuratedTags(): string[] {
 export function getTableSortCriterias() {
   const config = AppConfig.resourceConfig[ResourceType.table];
 
-  if (config && config.sortCriterias) {
+  if (config.sortCriterias) {
     return config.sortCriterias;
   }
 
@@ -305,6 +355,13 @@ const isNavLinkActive = (link: LinkConfig): boolean => {
 
   return true;
 };
+
+/*
+ * Returns the list of related apps for the navigation
+ */
+export function getNavAppSuite(): VisualLinkConfig[] | null {
+  return AppConfig.navAppSuite;
+}
 
 /*
  * Returns the updated list of navigation links given the other
@@ -339,6 +396,7 @@ export function generateExploreUrl(tableData: TableMetadata): string {
       partition.value
     );
   }
+
   return AppConfig.tableProfile.exploreUrlGenerator(
     tableData.database,
     tableData.cluster,
@@ -362,6 +420,7 @@ export function getMaxLength(key: string) {
  */
 export function getDescriptionSourceDisplayName(sourceId: string): string {
   const config = AppConfig.resourceConfig[ResourceType.table];
+
   if (
     config &&
     config.supportedDescriptionSources &&
@@ -381,6 +440,7 @@ export function getDescriptionSourceDisplayName(sourceId: string): string {
  */
 export function getDescriptionSourceIconPath(sourceId: string): string {
   const config = AppConfig.resourceConfig[ResourceType.table];
+
   if (
     config &&
     config.supportedDescriptionSources &&
@@ -417,17 +477,24 @@ export function getLogoTitle(): string {
 }
 
 /**
- * Returns whether the in-app table lineage list is enabled.
+ * Returns the global header logo path
  */
-export function isFeatureListLineageEnabled() {
-  return AppConfig.featureLineage.inAppListEnabled;
+export function getLogoPath(): string | null {
+  return AppConfig.logoPath;
 }
 
 /**
- * Returns whether the in-app table lineage list is enabled.
+ * Returns the navigation theme
  */
-export function isTableListLineageEnabled() {
-  return AppConfig.tableLineage.inAppListEnabled;
+export function getNavTheme(): 'light' | 'dark' {
+  return AppConfig.navTheme;
+}
+
+/**
+ * Returns whether the in-app feature lineage list is enabled.
+ */
+export function isFeatureListLineageEnabled() {
+  return AppConfig.featureLineage.inAppListEnabled;
 }
 
 /**
@@ -438,6 +505,27 @@ export function isColumnListLineageEnabled() {
 }
 
 /**
+ * Returns whether the in-app column lineage page is enabled.
+ */
+export function isColumnLineagePageEnabled() {
+  return AppConfig.columnLineage.inAppPageEnabled;
+}
+
+/**
+ * Returns tableLineage configuration
+ */
+export function getTableLineageConfiguration(): TableLineageConfig {
+  return AppConfig.tableLineage;
+}
+
+/**
+ * Returns whether the in-app table lineage list is enabled.
+ */
+export function isTableListLineageEnabled() {
+  return AppConfig.tableLineage.inAppListEnabled;
+}
+
+/**
  * Returns whether the in-app table lineage page is enabled.
  */
 export function isTableLineagePageEnabled() {
@@ -445,10 +533,17 @@ export function isTableLineagePageEnabled() {
 }
 
 /**
- * Returns whether the in-app column lineage page is enabled.
+ * Returns disableAppListLinks configuration for table lineage.
  */
-export function isColumnLineagePageEnabled() {
-  return AppConfig.columnLineage.inAppPageEnabled;
+export function getTableLineageDisableAppListLinks() {
+  return AppConfig.tableLineage.disableAppListLinks;
+}
+
+/**
+ * Returns the depth of lineage you should see in the lineage page
+ */
+export function getTableLineageDefaultDepth() {
+  return AppConfig.tableLineage.defaultLineageDepth;
 }
 
 /**
@@ -491,9 +586,10 @@ export function getMaxNestedColumns() {
 /**
  * Returns the configuration for the Product Tour
  */
-export function getProductToursFor(
-  path: string
-): { result: TourConfig[] | null; tourPath: string } {
+export function getProductToursFor(path: string): {
+  result: TourConfig[] | null;
+  tourPath: string;
+} {
   let result: TourConfig[] | null = null;
   let tourPath: string = '';
 
@@ -505,6 +601,7 @@ export function getProductToursFor(
   const wildcardPathKeys = Object.keys(AppConfig.productTour).filter(
     hasWildcard
   );
+
   if (wildcardPathKeys.length) {
     wildcardPathKeys.forEach((key) => {
       const decomposedKey = key.substring(0, key.length - 1);
@@ -528,4 +625,32 @@ export function searchHighlightingEnabled(resource: ResourceType): boolean {
  */
 export function getSearchResultsPerPage(): number {
   return AppConfig.searchPagination.resultsPerPage;
+}
+
+/**
+ * Returns the homepage widgets configuration
+ */
+export function getHomePageWidgets(): HomePageWidgetsConfig {
+  return AppConfig.homePageWidgets;
+}
+
+/**
+ * Returns the user Id Label ("email address" by default)
+ */
+export function getUserIdLabel(): string {
+  return AppConfig.userIdLabel;
+}
+
+/**
+ * Returns the date configuration
+ */
+export function getDateConfiguration(): DateFormatConfig {
+  return AppConfig.date;
+}
+
+/**
+ * Returns the resource owners section configuration
+ */
+export function getOwnersSectionConfig(): OwnersSectionConfig {
+  return AppConfig.ownersSection;
 }

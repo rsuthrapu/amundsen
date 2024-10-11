@@ -149,7 +149,7 @@ def get_table_metadata() -> Response:
 @action_logging
 def _get_table_metadata(*, table_key: str, index: int, source: str) -> Dict[str, Any]:
 
-    results_dict = {
+    results_dict: Dict[str, Any] = {
         'tableData': {},
         'msg': '',
     }
@@ -632,8 +632,8 @@ def get_user() -> Response:
     except Exception as e:
         message = 'Encountered exception: ' + str(e)
         logging.exception(message)
-        payload = jsonify({'msg': message})
-        return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
+        payload = {'msg': message}
+        return make_response(jsonify(payload), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 @metadata_blueprint.route('/user/bookmark', methods=['GET'])
@@ -822,7 +822,7 @@ def get_related_dashboard_metadata(table_key: str) -> Response:
 @action_logging
 def _get_related_dashboards_metadata(*, url: str) -> Dict[str, Any]:
 
-    results_dict = {
+    results_dict: Dict[str, Any] = {
         'dashboards': [],
         'msg': '',
     }
@@ -878,15 +878,19 @@ def get_table_lineage() -> Response:
         json = response.json()
         downstream = [marshall_lineage_table(table) for table in json.get('downstream_entities')]
         upstream = [marshall_lineage_table(table) for table in json.get('upstream_entities')]
+        downstream_count = json.get('downstream_count')
+        upstream_count = json.get('upstream_count')
 
         payload = {
             'downstream_entities': downstream,
             'upstream_entities': upstream,
+            'downstream_count': downstream_count,
+            'upstream_count': upstream_count,
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
-        return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
+        payload = {'msg': 'Encountered exception: ' + str(e)}
+        return make_response(jsonify(payload), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 @metadata_blueprint.route('/get_column_lineage', methods=['GET'])
@@ -904,15 +908,19 @@ def get_column_lineage() -> Response:
         json = response.json()
         downstream = [marshall_lineage_table(table) for table in json.get('downstream_entities')]
         upstream = [marshall_lineage_table(table) for table in json.get('upstream_entities')]
+        downstream_count = json.get('downstream_count')
+        upstream_count = json.get('upstream_count')
 
         payload = {
             'downstream_entities': downstream,
             'upstream_entities': upstream,
+            'downstream_count': downstream_count,
+            'upstream_count': upstream_count,
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
-        return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
+        payload = {'msg': 'Encountered exception: ' + str(e)}
+        return make_response(jsonify(payload), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 @metadata_blueprint.route('/get_feature_description', methods=['GET'])
@@ -1005,15 +1013,19 @@ def get_feature_lineage() -> Response:
         json = response.json()
         downstream = [marshall_lineage_table(table) for table in json.get('downstream_entities')]
         upstream = [marshall_lineage_table(table) for table in json.get('upstream_entities')]
+        downstream_count = json.get('downstream_count')
+        upstream_count = json.get('upstream_count')
 
         payload = {
             'downstream_entities': downstream,
             'upstream_entities': upstream,
+            'downstream_count': downstream_count,
+            'upstream_count': upstream_count,
         }
         return make_response(jsonify(payload), 200)
     except Exception as e:
-        payload = jsonify({'msg': 'Encountered exception: ' + str(e)})
-        return make_response(payload, HTTPStatus.INTERNAL_SERVER_ERROR)
+        payload = {'msg': 'Encountered exception: ' + str(e)}
+        return make_response(jsonify(payload), HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 @metadata_blueprint.route('/update_feature_owner', methods=['PUT', 'DELETE'])
@@ -1118,7 +1130,7 @@ def get_feature_metadata() -> Response:
 @action_logging
 def _get_feature_metadata(*, feature_key: str, index: int, source: str) -> Dict[str, Any]:
 
-    results_dict = {
+    results_dict: Dict[str, Any] = {
         'featureData': {},
         'msg': '',
     }

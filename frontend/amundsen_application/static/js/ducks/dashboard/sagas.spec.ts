@@ -11,6 +11,8 @@ import {
 } from './reducer';
 import { GetDashboard } from './types';
 
+import { STATUS_CODES } from '../../constants';
+
 describe('dashboard sagas', () => {
   describe('getDashboardWatcher', () => {
     it('takes every GetDashboard.REQUEST with getDashboardWorker', () => {
@@ -26,8 +28,9 @@ describe('dashboard sagas', () => {
     it('executes flow for successfully getting a dashboard', () => {
       const mockResponse = {
         dashboard: dashboardMetadata,
-        statusCode: 200,
+        statusCode: STATUS_CODES.OK,
       };
+
       testSaga(
         Sagas.getDashboardWorker,
         getDashboard({ uri: 'testUri', searchIndex: '0', source: 'blah' })
@@ -42,9 +45,10 @@ describe('dashboard sagas', () => {
 
     it('executes flow for a failed request dashboard', () => {
       const mockResponse = {
-        statusCode: 200,
+        statusCode: STATUS_CODES.OK,
         statusMessage: 'oops',
       };
+
       testSaga(
         Sagas.getDashboardWorker,
         getDashboard({ uri: 'testUri', searchIndex: '0', source: 'blah' })

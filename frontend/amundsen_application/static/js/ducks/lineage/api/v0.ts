@@ -1,3 +1,6 @@
+// Copyright Contributors to the Amundsen project.
+// SPDX-License-Identifier: Apache-2.0
+
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { Lineage } from 'interfaces/Lineage';
 import { getQueryParams } from 'ducks/utilMethods';
@@ -12,6 +15,7 @@ export function getTableLineage(
   direction: string = 'both'
 ) {
   const tableQueryParams = getQueryParams({ key, depth, direction });
+
   return axios
     .get(`${API_PATH}/get_table_lineage?${tableQueryParams}`)
     .then((response: AxiosResponse<LineageAPI>) => ({
@@ -21,6 +25,7 @@ export function getTableLineage(
     .catch((e: AxiosError<LineageAPI>) => {
       const { response } = e;
       const statusCode = response?.status;
+
       return Promise.reject({ statusCode });
     });
 }
@@ -31,6 +36,7 @@ export function getFeatureLineage(
   direction: string = 'upstream'
 ) {
   const tableQueryParams = getQueryParams({ key, depth, direction });
+
   return axios
     .get(`${API_PATH}/get_feature_lineage?${tableQueryParams}`)
     .then((response: AxiosResponse<LineageAPI>) => ({
@@ -40,6 +46,7 @@ export function getFeatureLineage(
     .catch((e: AxiosError<LineageAPI>) => {
       const { response } = e;
       const status = response ? response.status : null;
+
       return Promise.reject({ status });
     });
 }
@@ -56,6 +63,7 @@ export function getColumnLineage(
     direction,
     column_name: columnName,
   });
+
   return axios
     .get(`${API_PATH}/get_column_lineage?${tableQueryParams}`)
     .then((response: AxiosResponse<LineageAPI>) => ({
@@ -65,6 +73,7 @@ export function getColumnLineage(
     .catch((e: AxiosError<LineageAPI>) => {
       const { response } = e;
       const statusCode = response?.status;
+
       return Promise.reject({ statusCode });
     });
 }

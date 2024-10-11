@@ -1,3 +1,6 @@
+// Copyright Contributors to the Amundsen project.
+// SPDX-License-Identifier: Apache-2.0
+
 import { SagaIterator } from 'redux-saga';
 import { call, put, takeEvery } from 'redux-saga/effects';
 import * as API from './api/v0';
@@ -23,12 +26,15 @@ export function* getTableLineageWorker(
   action: GetTableLineageRequest
 ): SagaIterator {
   const { key, depth, direction } = action.payload;
+
   try {
     const response = yield call(API.getTableLineage, key, depth, direction);
     const { data, statusCode } = response;
+
     yield put(getTableLineageSuccess(data, statusCode));
   } catch (error) {
     const { statusCode } = error;
+
     yield put(getTableLineageFailure(statusCode));
   }
 }
@@ -40,6 +46,7 @@ export function* getColumnLineageWorker(
   action: GetColumnLineageRequest
 ): SagaIterator {
   const { key, columnName, depth, direction } = action.payload;
+
   try {
     const response = yield call(
       API.getColumnLineage,
@@ -49,9 +56,11 @@ export function* getColumnLineageWorker(
       direction
     );
     const { data, statusCode } = response;
+
     yield put(getColumnLineageSuccess(data, statusCode));
   } catch (error) {
     const { statusCode } = error;
+
     yield put(getColumnLineageFailure(statusCode));
   }
 }
@@ -64,6 +73,7 @@ export function* getTableColumnLineageWorker(
   action: GetTableColumnLineageRequest
 ): SagaIterator {
   const { key, columnName } = action.payload;
+
   try {
     const response = yield call(
       API.getColumnLineage,
@@ -73,9 +83,11 @@ export function* getTableColumnLineageWorker(
       'both'
     );
     const { data, statusCode } = response;
+
     yield put(getTableColumnLineageSuccess(data, columnName, statusCode));
   } catch (error) {
     const { statusCode } = error;
+
     yield put(getTableColumnLineageFailure(columnName, statusCode));
   }
 }

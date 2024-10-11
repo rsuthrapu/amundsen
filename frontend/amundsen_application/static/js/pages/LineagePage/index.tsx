@@ -13,11 +13,12 @@ import { GetTableLineageRequest } from 'ducks/lineage/types';
 import { Lineage, LineageItem } from 'interfaces';
 
 import { GlobalState } from 'ducks/rootReducer';
-import Breadcrumb from 'components/Breadcrumb';
+import Breadcrumb from 'features/Breadcrumb';
 
 import GraphLoading from 'components/Lineage/GraphLoading';
 import GraphContainer from 'components/Lineage/GraphContainer';
-import { buildTableKey } from 'utils/navigationUtils';
+import { getTableLineageDefaultDepth } from 'config/config-utils';
+import { buildTableKey } from 'utils/navigation';
 
 import * as Constants from './constants';
 
@@ -48,9 +49,11 @@ export type LineagePageProps = PropsFromState &
   DispatchFromProps &
   RouteComponentProps<MatchProps>;
 
+// TODO: Rework this whole component as part of https://jira.lyft.net/browse/AMD-2264
 const PageError = () => (
   <div className="container error-label">
     <Breadcrumb />
+    {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
     <label>{Constants.ERROR_MESSAGE}</label>
   </div>
 );
@@ -61,9 +64,11 @@ export const LineagePage: React.FC<
   const { params } = match;
   const pageTitle = `Lineage Information | ${params.schema}.${params.table}`;
   const [tableKey] = React.useState(buildTableKey(params));
+  const defaultDepth = getTableLineageDefaultDepth();
 
   React.useEffect(() => {
-    tableLineageGet(tableKey, 5);
+    tableLineageGet(tableKey, defaultDepth);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableKey]);
 
   const hasError = statusCode !== OK_STATUS_CODE;
@@ -85,6 +90,7 @@ export const LineagePage: React.FC<
   lineageTree.downstream_entities.push(rootNode);
 
   let content: JSX.Element | null = null;
+
   if (isLoading) {
     content = <GraphLoading />;
   } else if (hasError) {

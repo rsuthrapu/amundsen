@@ -5,6 +5,7 @@ import { OwnerDict, UpdateMethod, UpdateOwnerPayload } from 'interfaces';
 import globalState from 'fixtures/globalState';
 
 import * as API from '../api/v0';
+import { STATUS_CODES } from '../../../constants';
 
 import reducer, {
   updateTableOwner,
@@ -30,6 +31,7 @@ describe('tableMetadata:owners ducks', () => {
   let updatePayload: UpdateOwnerPayload[];
   let mockSuccess;
   let mockFailure;
+
   beforeAll(() => {
     expectedOwners = {
       testId: {
@@ -48,6 +50,7 @@ describe('tableMetadata:owners ducks', () => {
     it('updateTableOwner - returns the action to update table owners', () => {
       const action = updateTableOwner(updatePayload, mockSuccess, mockFailure);
       const { payload } = action;
+
       expect(action.type).toBe(UpdateTableOwner.REQUEST);
       expect(payload.updateArray).toBe(updatePayload);
       expect(payload.onSuccess).toBe(mockSuccess);
@@ -57,6 +60,7 @@ describe('tableMetadata:owners ducks', () => {
     it('updateTableOwnerFailure - returns the action to process failure', () => {
       const action = updateTableOwnerFailure(expectedOwners);
       const { payload } = action;
+
       expect(action.type).toBe(UpdateTableOwner.FAILURE);
       expect(payload.owners).toBe(expectedOwners);
     });
@@ -64,6 +68,7 @@ describe('tableMetadata:owners ducks', () => {
     it('updateTableOwnerSuccess - returns the action to process success', () => {
       const action = updateTableOwnerSuccess(expectedOwners);
       const { payload } = action;
+
       expect(action.type).toBe(UpdateTableOwner.SUCCESS);
       expect(payload.owners).toBe(expectedOwners);
     });
@@ -71,9 +76,11 @@ describe('tableMetadata:owners ducks', () => {
 
   describe('reducer', () => {
     let testState: TableOwnerReducerState;
+
     beforeAll(() => {
       testState = initialOwnersState;
     });
+
     it('should return the existing state if action is not handled', () => {
       expect(reducer(testState, { type: 'INVALID.ACTION' })).toEqual(testState);
     });
@@ -120,6 +127,7 @@ describe('tableMetadata:owners ducks', () => {
 
     it('should handle GetTableData.FAILURE', () => {
       const action = getTableDataFailure();
+
       expect(reducer(testState, action)).toEqual({
         ...testState,
         isLoading: false,
@@ -129,10 +137,16 @@ describe('tableMetadata:owners ducks', () => {
 
     it('should handle GetTableData.SUCCESS', () => {
       const mockTableData = globalState.tableMetadata.tableData;
+
       expect(
         reducer(
           testState,
-          getTableDataSuccess(mockTableData, expectedOwners, 200, [])
+          getTableDataSuccess(
+            mockTableData,
+            expectedOwners,
+            STATUS_CODES.OK,
+            []
+          )
         )
       ).toEqual({
         ...testState,
@@ -154,6 +168,7 @@ describe('tableMetadata:owners ducks', () => {
     describe('updateTableOwnerWorker', () => {
       describe('executes flow for updating owners and returning up to date owner dict', () => {
         let sagaTest;
+
         beforeAll(() => {
           sagaTest = (action) =>
             testSaga(updateTableOwnerWorker, action)
@@ -171,6 +186,7 @@ describe('tableMetadata:owners ducks', () => {
               .next(expectedOwners)
               .put(updateTableOwnerSuccess(expectedOwners));
         });
+
         it('without success callback', () => {
           sagaTest(updateTableOwner(updatePayload)).next().isDone();
         });
@@ -186,6 +202,7 @@ describe('tableMetadata:owners ducks', () => {
 
       describe('handles request error', () => {
         let sagaTest;
+
         beforeAll(() => {
           sagaTest = (action) =>
             testSaga(updateTableOwnerWorker, action)
@@ -199,6 +216,7 @@ describe('tableMetadata:owners ducks', () => {
                 )
               );
         });
+
         it('without failure callback', () => {
           sagaTest(updateTableOwner(updatePayload)).next().isDone();
         });

@@ -1,8 +1,8 @@
-import AppConfig from 'config/config';
 import {
   SubmitSearchResource,
   SubmitSearchResourceRequest,
 } from 'ducks/search/types';
+import { getFilterConfigByResource } from 'config/config-utils';
 import {
   FilterOperationType,
   ResourceType,
@@ -50,7 +50,7 @@ export interface ResourceFilterReducerState {
 export function getDefaultFiltersForResource(
   resourceType: ResourceType
 ): ResourceFilterReducerState {
-  const { filterCategories } = AppConfig.resourceConfig[resourceType];
+  const filterCategories = getFilterConfigByResource(resourceType);
   const initialValue = {};
   const defaultFilters =
     filterCategories
@@ -59,14 +59,17 @@ export function getDefaultFiltersForResource(
         const filterOptions: { [k: string]: any } = {
           value: currentFilter.defaultValue?.join(),
         };
+
         if (currentFilter.allowableOperation) {
           filterOptions.filterOperation = currentFilter.allowableOperation;
         }
+
         return {
           ...acc,
           [currentFilter.categoryId]: filterOptions,
         };
       }, initialValue) || {};
+
   return defaultFilters;
 }
 
@@ -92,6 +95,7 @@ export default function reducer(
   action
 ): FilterReducerState {
   const { payload } = <SubmitSearchResourceRequest>action;
+
   switch (action.type) {
     case SubmitSearchResource.REQUEST:
       if (payload.resource && payload.resourceFilters) {
@@ -100,6 +104,7 @@ export default function reducer(
           [payload.resource]: payload.resourceFilters,
         };
       }
+
       return state;
     default:
       return state;

@@ -6,6 +6,7 @@ import { ResourceType, SearchType } from 'interfaces';
 
 import * as ConfigUtils from 'config/config-utils';
 import * as API from '../v0';
+import { STATUS_CODES } from '../../../../constants';
 
 jest.mock('axios');
 
@@ -14,18 +15,20 @@ describe('searchResource', () => {
   let dashboardEnabledMock;
   let userEnabledMock;
   let mockSearchResponse: AxiosResponse<API.SearchAPI>;
+
   beforeAll(() => {
     mockSearchResponse = {
       data: {
         msg: 'Success',
-        status_code: 200,
+        status_code: STATUS_CODES.OK,
         search_term: globalState.search.search_term,
         table: globalState.search.tables,
         user: globalState.search.users,
       },
-      status: 200,
+      status: STATUS_CODES.OK,
       statusText: '',
       headers: {},
+      // @ts-ignore
       config: {},
     };
     axiosMockPost = jest
@@ -44,7 +47,9 @@ describe('searchResource', () => {
       const resultsPerPage = ConfigUtils.getSearchResultsPerPage();
       const resourceType = [ResourceType.dashboard];
       const term = 'test';
+
       expect.assertions(2);
+
       await API.search(
         pageIndex,
         resultsPerPage,
@@ -55,6 +60,7 @@ describe('searchResource', () => {
       ).then((results) => {
         expect(results).toEqual({});
       });
+
       expect(axiosMockPost).not.toHaveBeenCalled();
     });
 
@@ -65,7 +71,9 @@ describe('searchResource', () => {
       const resultsPerPage = ConfigUtils.getSearchResultsPerPage();
       const resourceType = [ResourceType.user];
       const term = 'test';
+
       expect.assertions(2);
+
       await API.search(
         pageIndex,
         resultsPerPage,
@@ -76,6 +84,7 @@ describe('searchResource', () => {
       ).then((results) => {
         expect(results).toEqual({});
       });
+
       expect(axiosMockPost).not.toHaveBeenCalled();
     });
 
@@ -93,6 +102,7 @@ describe('searchResource', () => {
             enable_highlight: true,
           },
         };
+
         await API.search(
           pageIndex,
           resultsPerPage,
@@ -101,6 +111,7 @@ describe('searchResource', () => {
           filters,
           searchType
         );
+
         expect(axiosMockPost).toHaveBeenCalledWith(`${API.BASE_URL}/search`, {
           filters,
           pageIndex,
@@ -126,6 +137,7 @@ describe('searchResource', () => {
             enable_highlight: true,
           },
         };
+
         await API.search(
           pageIndex,
           resultsPerPage,
@@ -134,6 +146,7 @@ describe('searchResource', () => {
           filters,
           searchType
         );
+
         expect(axiosMockPost).toHaveBeenCalledWith(`${API.BASE_URL}/search`, {
           filters,
           pageIndex,
@@ -147,6 +160,7 @@ describe('searchResource', () => {
 
       it('calls searchHelper with api call response', async () => {
         const searchHelperSpy = jest.spyOn(API, 'searchHelper');
+
         await API.search(
           0,
           ConfigUtils.getSearchResultsPerPage(),
@@ -155,6 +169,7 @@ describe('searchResource', () => {
           { schema: { value: 'schema_name' } },
           SearchType.FILTER
         );
+
         expect(searchHelperSpy).toHaveBeenCalledWith(mockSearchResponse);
       });
     });

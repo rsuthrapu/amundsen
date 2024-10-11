@@ -1,8 +1,12 @@
+// Copyright Contributors to the Amundsen project.
+// SPDX-License-Identifier: Apache-2.0
+
 export interface User {
   display_name: string;
   email: string;
   profile_url: string;
   user_id: string;
+  other_key_values?: Record<string, string>;
 }
 
 // Not a good name, not sure if we can consolidate yet

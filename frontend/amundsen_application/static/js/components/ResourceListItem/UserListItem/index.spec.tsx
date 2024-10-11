@@ -11,48 +11,49 @@ import { Link } from 'react-router-dom';
 import { ResourceType } from 'interfaces';
 import UserListItem, { UserListItemProps } from '.';
 
-describe('UserListItem', () => {
-  const setup = (propOverrides?: Partial<UserListItemProps>) => {
-    const props: UserListItemProps = {
-      logging: {
-        source: 'src',
-        index: 0,
-      },
-      user: {
-        type: ResourceType.user,
-        display_name: 'firstname lastname',
-        email: 'test@test.com',
-        employee_type: 'fulltime',
-        first_name: 'firstname',
-        full_name: 'firstname lastname',
-        github_username: 'githubName',
-        is_active: true,
-        last_name: 'lastname',
-        manager_fullname: 'Test Manager',
-        profile_url: 'www.test.com',
-        role_name: 'Tester',
-        slack_id: 'www.slack.com',
-        team_name: 'QA',
-        user_id: 'test0',
-      },
-      ...propOverrides,
-    };
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    const wrapper = shallow<UserListItem>(<UserListItem {...props} />);
-    return {
-      props,
-      wrapper,
-    };
+const setup = (propOverrides?: Partial<UserListItemProps>) => {
+  const props: UserListItemProps = {
+    logging: {
+      source: 'src',
+      index: 0,
+    },
+    user: {
+      type: ResourceType.user,
+      display_name: 'firstname lastname',
+      email: 'test@test.com',
+      employee_type: 'fulltime',
+      first_name: 'firstname',
+      full_name: 'firstname lastname',
+      github_username: 'githubName',
+      is_active: true,
+      last_name: 'lastname',
+      manager_fullname: 'Test Manager',
+      profile_url: 'www.test.com',
+      role_name: 'Tester',
+      slack_id: 'www.slack.com',
+      team_name: 'QA',
+      user_id: 'test0',
+    },
+    ...propOverrides,
   };
+  // eslint-disable-next-line react/jsx-props-no-spreading
+  const wrapper = shallow<UserListItem>(<UserListItem {...props} />);
 
+  return {
+    props,
+    wrapper,
+  };
+};
+
+describe('UserListItem', () => {
   describe('renderUserInfo', () => {
     let props: UserListItemProps;
     let wrapper;
+
     beforeAll(() => {
-      const setupResult = setup();
-      props = setupResult.props;
-      wrapper = setupResult.wrapper;
+      ({ props, wrapper } = setup());
     });
+
     it('returns null if no role_name or team_name exists on', () => {
       const testUser = {
         type: ResourceType.user,
@@ -71,11 +72,13 @@ describe('UserListItem', () => {
         team_name: '',
         user_id: 'test0',
       };
+
       expect(wrapper.instance().renderUserInfo(testUser)).toBe(null);
     });
 
     it('returns an array of list items for user description', () => {
       const content = wrapper.instance().renderUserInfo(props.user);
+
       expect(shallow(content[0]).find('li').text()).toEqual(
         props.user.role_name
       );
@@ -88,10 +91,9 @@ describe('UserListItem', () => {
   describe('render', () => {
     let props: UserListItemProps;
     let wrapper;
+
     beforeAll(() => {
-      const setupResult = setup();
-      props = setupResult.props;
-      wrapper = setupResult.wrapper;
+      ({ props, wrapper } = setup());
     });
 
     it('renders item as Link', () => {
@@ -100,6 +102,7 @@ describe('UserListItem', () => {
 
     describe('renders resource-info section', () => {
       let resourceInfo;
+
       beforeAll(() => {
         resourceInfo = wrapper.find('.resource-info');
       });
@@ -123,15 +126,19 @@ describe('UserListItem', () => {
           wrapper.instance(),
           'renderUserInfo'
         );
+
         wrapper.instance().forceUpdate();
+
         expect(renderUserInfoSpy).toHaveBeenCalledWith(props.user);
       });
 
       it('renders ul with list item results of renderUserInfo', () => {
-        const renderUserInfoSpy = jest
+        jest
           .spyOn(wrapper.instance(), 'renderUserInfo')
           .mockImplementation(() => <div>Mock Info</div>);
+
         wrapper.instance().forceUpdate();
+
         expect(
           wrapper
             .find('.resource-info')
@@ -146,10 +153,12 @@ describe('UserListItem', () => {
       });
 
       it('does not render description if renderUserInfo returns null', () => {
-        const renderUserInfoSpy = jest
+        jest
           .spyOn(wrapper.instance(), 'renderUserInfo')
           .mockImplementation(() => null);
+
         wrapper.instance().forceUpdate();
+
         expect(
           wrapper
             .find('.resource-info')
@@ -164,6 +173,7 @@ describe('UserListItem', () => {
 
     describe('renders resource-type section', () => {
       let resourceType;
+
       beforeAll(() => {
         resourceType = wrapper.find('.resource-type');
       });
@@ -175,6 +185,7 @@ describe('UserListItem', () => {
 
     describe('renders resource-badges section', () => {
       let resourceBadges;
+
       beforeAll(() => {
         resourceBadges = wrapper.find('.resource-badges');
       });
@@ -185,6 +196,7 @@ describe('UserListItem', () => {
 
       it('renders correct end icon', () => {
         const expectedClassName = 'icon icon-right';
+
         expect(resourceBadges.find('img').props().className).toEqual(
           expectedClassName
         );
@@ -196,6 +208,7 @@ describe('UserListItem', () => {
     it('getLink returns correct string', () => {
       const { props, wrapper } = setup();
       const { user, logging } = props;
+
       expect(wrapper.instance().getLink()).toEqual(
         `/user/${user.user_id}?index=${logging.index}&source=${logging.source}`
       );

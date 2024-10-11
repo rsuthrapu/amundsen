@@ -86,8 +86,9 @@ export class DataPreviewButton extends React.Component<
   }
 
   componentDidMount() {
-    const { tableData } = this.props;
-    this.props.getPreviewData({
+    const { tableData, getPreviewData } = this.props;
+
+    getPreviewData({
       database: tableData.database,
       schema: tableData.schema,
       tableName: tableData.name,
@@ -105,13 +106,13 @@ export class DataPreviewButton extends React.Component<
   };
 
   renderModalBody() {
-    const { previewData } = this.props;
+    const { previewData, status } = this.props;
 
-    if (this.props.status === LoadingStatus.SUCCESS) {
+    if (status === LoadingStatus.SUCCESS) {
       return <PreviewDataTable isLoading={false} previewData={previewData} />;
     }
 
-    if (this.props.status === LoadingStatus.UNAUTHORIZED) {
+    if (status === LoadingStatus.UNAUTHORIZED) {
       return (
         <div>
           <Linkify>{previewData.error_text}</Linkify>
@@ -123,36 +124,31 @@ export class DataPreviewButton extends React.Component<
   }
 
   renderPreviewButton() {
-    const { previewData } = this.props;
+    const { previewData, status } = this.props;
 
     // Based on the state, the preview button will show different things.
     let buttonText = 'Loading...';
     let disabled = true;
-    let iconClass = 'icon-loading';
     let popoverText = 'The data preview is loading';
 
     // TODO: Setting hardcoded strings that should be customizable/translatable
-    switch (this.props.status) {
+    switch (status) {
       case LoadingStatus.SUCCESS:
       case LoadingStatus.UNAUTHORIZED:
         buttonText = 'Preview';
-        iconClass = 'icon-preview';
         disabled = false;
         break;
       case LoadingStatus.FORBIDDEN:
         buttonText = 'Preview';
-        iconClass = 'icon-preview';
         popoverText =
           previewData.error_text || 'User is forbidden to preview this data';
         break;
       case LoadingStatus.UNAVAILABLE:
         buttonText = 'Preview';
-        iconClass = 'icon-preview';
         popoverText = 'This feature has not been configured by your service';
         break;
       case LoadingStatus.ERROR:
         buttonText = 'Preview';
-        iconClass = 'icon-preview';
         popoverText =
           previewData.error_text ||
           'An internal server error has occurred, please contact service admin';
@@ -180,6 +176,7 @@ export class DataPreviewButton extends React.Component<
     const popoverHover = (
       <Popover id="popover-trigger-hover">{popoverText}</Popover>
     );
+
     return (
       <OverlayTrigger
         trigger={['hover', 'focus']}
@@ -194,12 +191,19 @@ export class DataPreviewButton extends React.Component<
   }
 
   render() {
+    const { modalTitle } = this.props;
+    const { showModal } = this.state;
+
     return (
       <>
         {this.renderPreviewButton()}
-        <Modal show={this.state.showModal} onHide={this.handleClose}>
+        <Modal
+          className="data-preview-modal"
+          show={showModal}
+          onHide={this.handleClose}
+        >
           <Modal.Header className="text-center" closeButton>
-            <Modal.Title>{this.props.modalTitle}</Modal.Title>
+            <Modal.Title>{modalTitle}</Modal.Title>
           </Modal.Header>
           <Modal.Body>{this.renderModalBody()}</Modal.Body>
         </Modal>

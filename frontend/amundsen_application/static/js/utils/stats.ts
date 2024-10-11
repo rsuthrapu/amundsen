@@ -1,4 +1,4 @@
-import { formatDate } from 'utils/dateUtils';
+import { formatDate } from 'utils/date';
 
 import { getUniqueValueStatTypeName } from 'config/config-utils';
 
@@ -31,6 +31,7 @@ export const getUniqueValues = (
   statsList: TableColumnStats[]
 ): ColumnUniqueValues[] | [] => {
   const uniqueValuesKey = getUniqueValueStatTypeName();
+
   if (!uniqueValuesKey) {
     return [];
   }

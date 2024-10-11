@@ -281,7 +281,7 @@ def _safe_get_list(root, *keys, transform: Optional[Callable] = None):
         raise RuntimeError(f'{values} is not a List!  root={root} keys={keys}')
     elif transform is None:
         return sorted(values)
-    elif len(values) > 0 and type(values[0]) == datetime and transform == int:
+    elif len(values) > 0 and type(values[0]) is datetime and transform == int:
         # need to do something special for datetimes we are transforming into int's
         return sorted([transform(value.timestamp()) for value in values])
     else:
@@ -1019,6 +1019,7 @@ class AbstractGremlinProxy(BaseProxy):
         user.manager_fullname = _safe_get(managers[0], 'full_name', default=None) if managers else None
         return user
 
+    @no_type_check
     def create_update_user(self, *, user: User) -> Tuple[User, bool]:
         pass
 
@@ -1471,6 +1472,7 @@ class AbstractGremlinProxy(BaseProxy):
                      key=AMUNDSEN_TIMESTAMP_KEY).values('latest_timestamp').toList()
         return _safe_get(results, transform=int)
 
+    @no_type_check
     def get_statistics(self) -> Dict[str, Any]:
         # Not implemented
         pass
@@ -1490,6 +1492,7 @@ class AbstractGremlinProxy(BaseProxy):
         counts = self.query_executor()(query=g, get=FromResultSet.getOnly)
         return [TagDetail(tag_name=name, tag_count=value) for name, value in counts.items()]
 
+    @no_type_check
     def get_badges(self) -> List:
         pass
 
@@ -1553,6 +1556,7 @@ class AbstractGremlinProxy(BaseProxy):
         # this is weird but the convention
         return {'table': popular_tables}
 
+    @no_type_check
     @timer_with_counter
     @overrides
     def get_dashboard_by_user_relation(self, *, user_email: str, relation_type: UserResourceRel) \
@@ -1560,6 +1564,7 @@ class AbstractGremlinProxy(BaseProxy):
         pass
 
     # TODO: impl
+    @no_type_check
     @timer_with_counter
     @overrides
     def get_frequently_used_tables(self, *, user_email: str) -> Dict[str, Any]:
@@ -1639,7 +1644,8 @@ class AbstractGremlinProxy(BaseProxy):
         :param dashboard_uri: dashboard URI that is sent from frontend
         :return: Tuple of 3 String and 1 int, for dashbaord uri, url, name, and created timestamp
         """
-        dashboard = self.g.V().has("key", dashboard_uri).valueMap().by(__.unfold()).toList()
+        dashboard_query = self.g.V().has("key", dashboard_uri).valueMap().by(__.unfold())
+        dashboard = self.query_executor()(query=dashboard_query, get=FromResultSet.toList)
         if len(dashboard) > 1:
             raise Exception(f"More than one Dashboard Found with ID {dashboard_uri}.")
         if len(dashboard) == 0:
@@ -1660,7 +1666,8 @@ class AbstractGremlinProxy(BaseProxy):
         :param dashboard_uri: dashboard URI that is sent from frontend
         :return: Tuple of 4 String
         """
-        dashboard_group = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF").valueMap().by(__.unfold()).toList()
+        dashboard_group_query = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF").valueMap().by(__.unfold())
+        dashboard_group = self.query_executor()(query=dashboard_group_query, get=FromResultSet.toList)
         if dashboard_group:
             dashboard_group_name = dashboard_group[0].get("name", "")
             dashboard_group_url = dashboard_group[0].get("dashboard_group_url", "")
@@ -1668,8 +1675,9 @@ class AbstractGremlinProxy(BaseProxy):
             dashboard_group_name = ""
             dashboard_group_url = ""
 
-        dashboard_cluster = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF")
-        dashboard_cluster = dashboard_cluster.out("DASHBOARD_GROUP_OF").valueMap().by(__.unfold()).toList()
+        dashboard_cluster_query = self.g.V().has("key", dashboard_uri).out("DASHBOARD_OF")
+        dashboard_cluster_query = dashboard_cluster_query.out("DASHBOARD_GROUP_OF").valueMap().by(__.unfold())
+        dashboard_cluster = self.query_executor()(query=dashboard_cluster_query, get=FromResultSet.toList)
         if dashboard_cluster:
             cluster_name = dashboard_cluster[0].get("name", "")
             product_name = dashboard_cluster[0].get("key", "").split("_")[0]
@@ -1687,17 +1695,19 @@ class AbstractGremlinProxy(BaseProxy):
         :return: List of PopularTable
         """
 
-        dashboard_tables = self.g.V().has("key", dashboard_uri).out("DASHBOARD_WITH_TABLE")
-        dashboard_tables = dashboard_tables.valueMap(True).by(__.unfold()).toList()
+        dashboard_tables_query = self.g.V().has("key", dashboard_uri).out("DASHBOARD_WITH_TABLE")
+        dashboard_tables_query = dashboard_tables_query.valueMap(True).by(__.unfold())
+        dashboard_tables = self.query_executor()(query=dashboard_tables_query, get=FromResultSet.toList)
         tables = []
         for table in dashboard_tables:
-            tabe_base = table.get('key').split("://")[1]
+            table_base = table.get('key').split("://")[1]
             table_db = table.get('key').split("://")[0]
-            table_cluster = tabe_base.split(".")[0]
+            table_cluster = table_base.split(".")[0]
             table_name = table.get('name')
-            table_schema = tabe_base.split("/")[0]
-            table_desc_vertex = self.g.V(table[T.id]).out("DESCRIPTION")
-            table_desc_vertex = table_desc_vertex.filter(__.hasLabel("Description")).valueMap().by(__.unfold()).toList()
+            table_schema = table_base.split("/")[0]
+            table_desc_vertex_q = self.g.V(table[T.id]).out("DESCRIPTION")
+            table_desc_vertex_q = table_desc_vertex_q.filter(__.hasLabel("Description")).valueMap().by(__.unfold())
+            table_desc_vertex = self.query_executor()(query=table_desc_vertex_q, get=FromResultSet.toList)
             if table_desc_vertex:
                 for desc in table_desc_vertex:
                     table_desc = desc.get('description')
@@ -1724,30 +1734,36 @@ class AbstractGremlinProxy(BaseProxy):
         dashboard_group_name, dashboard_group_url, cluster_name, product_name = \
             self._get_dashboard_group_and_cluster(dashboard_uri)
 
-        dashboard_desc = self.g.V().has("key", dashboard_uri).out("DESCRIPTION")
-        dashboard_desc = dashboard_desc.valueMap().by(__.unfold()).toList()
+        dashboard_desc_query = self.g.V().has("key", dashboard_uri).out("DESCRIPTION")
+        dashboard_desc_query = dashboard_desc_query.valueMap().by(__.unfold())
+        dashboard_desc = self.query_executor()(query=dashboard_desc_query, get=FromResultSet.toList)
         if dashboard_desc:
             dashboard_description = dashboard_desc[0].get("description", "")
         else:
             dashboard_description = ""
 
         owners = []
-        dashboard_owners = self.g.V().has("key", dashboard_uri).out("READ_BY", "OWNER")
-        dashboard_owners = dashboard_owners.dedup().valueMap().by(__.unfold()).toList()
+        dashboard_owners_query = self.g.V().has("key", dashboard_uri).out("READ_BY", "OWNER")
+        dashboard_owners_query = dashboard_owners_query.dedup().valueMap().by(__.unfold())
+        dashboard_owners = self.query_executor()(query=dashboard_owners_query, get=FromResultSet.toList)
         for owner in dashboard_owners:
             owner_data = self._get_user_details(user_id=owner["email"], user_data=owner)
             owners.append(self._build_user_from_record(record=owner_data))
 
-        dashboard_tags = self.g.V().has("key", dashboard_uri).out("TAGGED_BY").valueMap().by(__.unfold()).toList()
+        dashboard_tags_query = self.g.V().has("key", dashboard_uri).out("TAGGED_BY").valueMap().by(__.unfold())
+        dashboard_tags = self.query_executor()(query=dashboard_tags_query, get=FromResultSet.toList)
         tags = [Tag(tag_type=tag['tag_type'], tag_name=tag['key']) for tag in dashboard_tags]
 
-        dashboard_badges = self.g.V().has("key", dashboard_uri).out("HAS_BADGE").valueMap().by(__.unfold()).toList()
+        dashboard_badges_query = self.g.V().has("key", dashboard_uri).out("HAS_BADGE").valueMap().by(__.unfold())
+        dashboard_badges = self.query_executor()(query=dashboard_badges_query, get=FromResultSet.toList)
         badges = self._make_badges(dashboard_badges)
 
-        dashboard_charts = self.g.V().has("key", dashboard_uri).out("HAS_CHART").valueMap().by(__.unfold()).toList()
+        dashboard_charts_query = self.g.V().has("key", dashboard_uri).out("HAS_CHART").valueMap().by(__.unfold())
+        dashboard_charts = self.query_executor()(query=dashboard_charts_query, get=FromResultSet.toList)
         chart = [chart['name'] for chart in dashboard_charts if 'name' in chart and chart['name']]
 
-        dashboard_query = self.g.V().has("key", dashboard_uri).out("HAS_QUERY").valueMap().by(__.unfold()).toList()
+        dashboard_query_query = self.g.V().has("key", dashboard_uri).out("HAS_QUERY").valueMap().by(__.unfold())
+        dashboard_query = self.query_executor()(query=dashboard_query_query, get=FromResultSet.toList)
         query_names = [query['name'] for query in dashboard_query if 'name' in query and query['name']]
         queries = []
         for query in dashboard_query:
@@ -1760,8 +1776,8 @@ class AbstractGremlinProxy(BaseProxy):
         last_successful_run_timestamp = None
         last_run_timestamp = None
         last_run_state = None
-        dashboard_execution = self.g.V().has("key", dashboard_uri).out("EXECUTED").valueMap().by(__.unfold()).toList()
-
+        dashboard_execution_query = self.g.V().has("key", dashboard_uri).out("EXECUTED").valueMap().by(__.unfold())
+        dashboard_execution = self.query_executor()(query=dashboard_execution_query, get=FromResultSet.toList)
         for execution in dashboard_execution:
             if "last_successful_execution" in execution.get("key"):
                 last_successful_run_timestamp = int(execution.get("timestamp"))
@@ -1770,13 +1786,15 @@ class AbstractGremlinProxy(BaseProxy):
                 last_run_state = execution.get("state")
 
         updated_timestamp = None
-        dashboard_last_update = self.g.V().has("key", dashboard_uri).out("LAST_UPDATED_AT")
-        dashboard_last_update = dashboard_last_update.valueMap().by(__.unfold()).toList()
+        dashboard_last_update_query = self.g.V().has("key", dashboard_uri).out("LAST_UPDATED_AT")
+        dashboard_last_update_query = dashboard_last_update_query.valueMap().by(__.unfold())
+        dashboard_last_update = self.query_executor()(query=dashboard_last_update_query, get=FromResultSet.toList)
         for last_update in dashboard_last_update:
             updated_timestamp = int(last_update.get("timestamp"))
 
         view_count = 0
-        dashboard_view_count = self.g.V().has("key", dashboard_uri).outE("READ_BY").valueMap().by(__.unfold()).toList()
+        dashboard_view_count = self.g.V().has("key", dashboard_uri).outE("READ_BY").valueMap().by(__.unfold())
+        dashboard_view_count = self.query_executor()(query=dashboard_view_count, get=FromResultSet.toList)
         for view in dashboard_view_count:
             view_count += view.get("read_count")
 
@@ -1803,6 +1821,7 @@ class AbstractGremlinProxy(BaseProxy):
                                      tables=tables
                                      )
 
+    @no_type_check
     @timer_with_counter
     @overrides
     def get_dashboard_description(self, *,
@@ -1821,10 +1840,40 @@ class AbstractGremlinProxy(BaseProxy):
     def get_resources_using_table(self, *,
                                   id: str,
                                   resource_type: ResourceType) -> Dict[str, List[DashboardSummary]]:
-        pass
+        """
+        Retrieves the dashboards that are using a specific table, in the form of DashboardSummary objects.
+
+        :param id: The unique identifier of the table.
+        :param resource_type: The type of the resource. Only ResourceType.Dashboard is supported.
+        :return: A dictionary with a single key 'dashboards' that maps to a list of DashboardSummary objects.
+                Each DashboardSummary object represents a dashboard that uses the table.
+        :raises NotImplementedError: If the resource_type is not ResourceType.Dashboard.
+        """
+        if resource_type != ResourceType.Dashboard:
+            raise NotImplementedError(f'{resource_type} is not supported')
+
+        resources_using_table_query = self.g.V().hasLabel('Table').has('key', id).both('TABLE_OF_DASHBOARD')
+        resources_using_table_query = resources_using_table_query.valueMap(True).by(__.unfold())
+        dashboards_list = self.query_executor()(query=resources_using_table_query, get=FromResultSet.toList)
+        results = []
+        for dashboard in dashboards_list:
+            entry = {
+                'uri': dashboard['key'],
+                'cluster': dashboard['name'],
+                'group_name': dashboard['name'],
+                'group_url': dashboard['dashboard_group_url'],
+                'product': dashboard['key'].split('_')[0],
+                'name': dashboard['name'],
+                'url': dashboard['dashboard_url'],
+                'last_successful_run_timestamp': dashboard['last_extracted_datetime'].timestamp()
+            }
+            results.append(DashboardSummary(**entry))
+
+        return {'dashboards': results}
 
     def _get_user_table_relationship_clause(self, *, g: Traversal, relation_type: UserResourceRel,
-                                            table_uri: str = None, user_key: str = None) -> GraphTraversal:
+                                            table_uri: Optional[str] = None,
+                                            user_key: Optional[str] = None) -> GraphTraversal:
         """
         Returns the relationship traversal for get_table_by_user_relation et al.
         """
@@ -1945,8 +1994,8 @@ class AbstractGremlinProxy(BaseProxy):
 
         raise NotImplementedError(f"Don't know how to handle UserResourceRel={relation}")
 
-    def _parse_lineage(self, resource_type: ResourceType, type_: str, upstream_tables: List[LineageItem], path: Path,
-                       downstream_tables: List[LineageItem]) -> Tuple[List[LineageItem], List[LineageItem]]:
+    def _parse_lineage(self, resource_type: ResourceType, type_: str, upstream_tables: List[LineageItem],
+                       downstream_tables: List[LineageItem], path: Path) -> Tuple[List[LineageItem], List[LineageItem]]:
         """
         Helper function to parse the lineage path
         :param resource_type: Type of the entity for which lineage is being retrieved
@@ -2022,17 +2071,20 @@ class AbstractGremlinProxy(BaseProxy):
             if path_list == []:
                 continue
             for path in path_list:
-                upstream_tables, downstream_tables = self._parse_lineage(resource_type, type_,
-                                                                         upstream_tables, downstream_tables, path)
+                upstream_tables, downstream_tables = self._parse_lineage(resource_type=resource_type,
+                                                                         type_=type_,
+                                                                         upstream_tables=upstream_tables,
+                                                                         downstream_tables=downstream_tables,
+                                                                         path=path)
 
-        return Lineage(**{"key": id,
-                          "upstream_entities": upstream_tables,
-                          "downstream_entities": downstream_tables,
-                          "direction": direction, "depth": depth})
+        return Lineage(key=id, upstream_entities=upstream_tables, downstream_entities=downstream_tables,
+                       direction=direction, depth=depth)
 
+    @no_type_check
     def get_feature(self, *, feature_uri: str) -> Feature:
         pass
 
+    @no_type_check
     def get_resource_description(self, *,
                                  resource_type: ResourceType,
                                  uri: str) -> Description:
@@ -2056,6 +2108,7 @@ class AbstractGremlinProxy(BaseProxy):
                               owner: str) -> None:
         pass
 
+    @no_type_check
     def get_resource_generation_code(self, *,
                                      uri: str,
                                      resource_type: ResourceType) -> GenerationCode:

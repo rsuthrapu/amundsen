@@ -16,10 +16,12 @@ import {
 } from 'ducks/tableMetadata/reducer';
 import { IconSizes } from 'interfaces';
 import { TableQualityChecks } from 'interfaces/TableMetadata';
-import { formatDateTimeShort } from 'utils/dateUtils';
+import { formatDateTimeShort } from 'utils/date';
 import { FailureIcon } from 'components/SVGIcons/FailureIcon';
 import { SuccessIcon } from 'components/SVGIcons/SuccessIcon';
 import * as Constants from './constants';
+
+import { STATUS_CODES } from '../../../constants';
 
 import './styles.scss';
 
@@ -54,6 +56,7 @@ export function generateChecksText(numFailed, numTotal) {
   if (numFailed > 0) {
     return `${numFailed} out of ${numTotal} checks failed`;
   }
+
   return `All ${numTotal} checks passed`;
 }
 
@@ -61,6 +64,7 @@ function getStatusIcon(numFailed) {
   if (numFailed > 0) {
     return <FailureIcon size={IconSizes.SMALL} />;
   }
+
   return <SuccessIcon size={IconSizes.SMALL} />;
 }
 
@@ -74,18 +78,20 @@ export const TableQualityChecksLabel: React.FC<TableQualityChecksProps> = ({
 }) => {
   React.useEffect(() => {
     getTableQualityChecksDispatch(tableKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {
     return <ShimmeringTableQualityChecks />;
   }
-  if (status !== 200 || checks.num_checks_total === 0) {
+  if (status !== STATUS_CODES.OK || checks.num_checks_total === 0) {
     return null;
   }
   const checkText = generateChecksText(
     checks.num_checks_failed,
     checks.num_checks_total
   );
+
   return (
     <section className="metadata-section table-quality-checks">
       <div className="section-title">{Constants.COMPONENT_TITLE}</div>

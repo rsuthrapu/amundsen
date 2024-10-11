@@ -1,3 +1,6 @@
+// Copyright Contributors to the Amundsen project.
+// SPDX-License-Identifier: Apache-2.0
+
 import { ColumnLineageMap, Lineage } from 'interfaces/Lineage';
 import {
   GetColumnLineage,
@@ -30,7 +33,7 @@ export const initialState: LineageReducerState = {
 /* ACTIONS */
 export function getTableLineage(
   key: string,
-  depth: number = 1,
+  depth: number,
   direction: string = 'both'
 ): GetTableLineageRequest {
   return {
@@ -199,6 +202,7 @@ export default function reducer(
     }
     case GetTableColumnLineage.REQUEST: {
       const { columnName } = (<GetTableColumnLineageRequest>action).payload;
+
       return {
         ...state,
         columnLineageMap: {
@@ -216,6 +220,7 @@ export default function reducer(
       const { columnName, lineageTree: columnLineage } = (<
         GetTableColumnLineageResponse
       >action).payload;
+
       return {
         ...state,
         columnLineageMap: {

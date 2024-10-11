@@ -36,14 +36,16 @@ class PaginatedResourceList extends React.Component<
     };
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate() {
     //  Resets the activePage to the maximum possible value if page is out of bounds for the new length of allItems
-    const effectivePageNum = this.state.activePage + 1;
+    const { activePage } = this.state;
+    const effectivePageNum = activePage + 1;
     const { itemsPerPage, allItems } = this.props;
     const newPage = Math.ceil(allItems.length / itemsPerPage) - 1;
+
     if (
       itemsPerPage * effectivePageNum > allItems.length &&
-      newPage !== this.state.activePage
+      newPage !== activePage
     ) {
       this.setState({ activePage: newPage });
     }
@@ -51,6 +53,7 @@ class PaginatedResourceList extends React.Component<
 
   onPagination = (rawPageNum: number) => {
     const activePage = rawPageNum - 1;
+
     this.setState({ activePage });
   };
 
@@ -60,10 +63,7 @@ class PaginatedResourceList extends React.Component<
     const allItemsCount = allItems.length;
 
     const startIndex = itemsPerPage * activePage;
-    const itemsToRender = this.props.allItems.slice(
-      startIndex,
-      startIndex + itemsPerPage
-    );
+    const itemsToRender = allItems.slice(startIndex, startIndex + itemsPerPage);
 
     return (
       <div className="paginated-resource-list">
@@ -75,6 +75,7 @@ class PaginatedResourceList extends React.Component<
             <ul className="list-group">
               {itemsToRender.map((item, idx) => {
                 const logging = { source, index: startIndex + idx };
+
                 return (
                   <ResourceListItem item={item} logging={logging} key={idx} />
                 );

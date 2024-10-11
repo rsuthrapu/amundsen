@@ -8,9 +8,9 @@ import { RouteComponentProps } from 'react-router';
 
 import TabsComponent, { TabInfo } from 'components/TabsComponent';
 import { TAB_URL_PARAM } from 'components/TabsComponent/constants';
-import Breadcrumb from 'components/Breadcrumb';
+import Breadcrumb from 'features/Breadcrumb';
 import EditableSection from 'components/EditableSection';
-import TagInput from 'components/Tags/TagInput';
+import TagInput from 'features/Tags/TagInput';
 import BadgeList from 'features/BadgeList';
 import LineageList from 'pages/TableDetailPage/LineageList';
 import {
@@ -39,13 +39,10 @@ import { PreviewDataTable } from 'features/PreviewData';
 import { FeatureMetadata, FeaturePreviewQueryParams } from 'interfaces/Feature';
 import { ResourceType } from 'interfaces/Resources';
 import { logAction } from 'utils/analytics';
-import {
-  getLoggingParams,
-  getUrlParam,
-  setUrlParam,
-} from 'utils/navigationUtils';
-import { formatDateTimeShort } from 'utils/dateUtils';
-
+import { getLoggingParams, getUrlParam, setUrlParam } from 'utils/navigation';
+import { formatDateTimeShort } from 'utils/date';
+import { ProgrammaticDescription } from 'interfaces';
+import EditableText from 'components/EditableText';
 import FeatureDescEditableText from './FeatureDescEditableText';
 import FeatureOwnerEditor from './FeatureOwnerEditor';
 import { GenerationCode } from './GenerationCode';
@@ -61,10 +58,11 @@ import {
   LAST_UPDATED_TITLE,
   OWNERS_TITLE,
   PARTITION_KEY_TITLE,
-  SOURCE_TITLE,
+  AVAILABILITY_TITLE,
   TAG_TITLE,
   VERSION_TITLE,
   UPSTREAM_TAB_TITLE,
+  DESCRIPTION_MAX_LENGTH,
 } from './constants';
 
 import './styles.scss';
@@ -172,9 +170,29 @@ export const FeaturePageLoader: React.FC = () => (
   </div>
 );
 
+export function renderProgrammaticDesc(
+  descriptions: ProgrammaticDescription[] | undefined
+) {
+  if (!descriptions) {
+    return null;
+  }
+
+  return descriptions.map((d) => (
+    <EditableSection key={`prog_desc:${d.source}`} title={d.source} readOnly>
+      <EditableText
+        maxLength={DESCRIPTION_MAX_LENGTH}
+        value={d.text}
+        editable={false}
+        allowDangerousHtml
+      />
+    </EditableSection>
+  ));
+}
+
 export function renderTabs(featureCode, featureLineage, preview) {
   const defaultTab = getUrlParam(TAB_URL_PARAM) || FEATURE_TAB.PREVIEW_DATA;
   const tabInfo: TabInfo[] = [];
+
   tabInfo.push({
     content: (
       <PreviewDataTable
@@ -187,6 +205,7 @@ export function renderTabs(featureCode, featureLineage, preview) {
   });
   if (isFeatureListLineageEnabled()) {
     const upstreamItems = featureLineage.featureLineage.upstream_entities;
+
     if (upstreamItems.length) {
       tabInfo.push({
         content: <LineageList items={upstreamItems} direction="upstream" />,
@@ -239,15 +258,20 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
   match,
 }: FeaturePageProps) => {
   const [key, setKey] = React.useState('');
+
   React.useEffect(() => {
     const { group, name, version } = match.params;
     const newKey = getFeatureKey(group, name, version);
+
     if (key !== newKey) {
       const { index, source } = getLoggingParams(location.search);
+
       setKey(newKey);
       getFeatureDispatch(newKey, index, source);
       getFeatureCodeDispatch(newKey);
-      getFeatureLineageDispatch(newKey);
+      if (isFeatureListLineageEnabled()) {
+        getFeatureLineageDispatch(newKey);
+      }
       getFeaturePreviewDispatch({
         version,
         feature_group: group,
@@ -262,6 +286,7 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
   const sourcesWithDisplay = feature.availability.map((source) =>
     getSourceDisplayName(source, ResourceType.feature)
   );
+
   return (
     <div className="resource-detail-layout feature-page">
       <header className="resource-header">
@@ -277,9 +302,9 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
             {feature.feature_group}.{feature.name}.{feature.version}
           </h1>
           <p className="header-subtitle text-body-w3">
-            {getDisplayNameByResource(ResourceType.feature)}
-            {sourcesWithDisplay.length > 0 && '&bull;&nbsp;'}
-            {sourcesWithDisplay.join(', ')}
+            <ul className="header-bullets">
+              <li>{getDisplayNameByResource(ResourceType.feature)}</li>
+            </ul>
             {feature.badges.length > 0 && <BadgeList badges={feature.badges} />}
           </p>
         </section>
@@ -306,8 +331,10 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
                 {feature.data_type}
               </section>
               <section className="metadata-section">
-                <h3 className="section-title text-title-w3">{SOURCE_TITLE}</h3>
-                {feature.availability}
+                <h3 className="section-title text-title-w3">
+                  {AVAILABILITY_TITLE}
+                </h3>
+                {sourcesWithDisplay.join(', ')}
               </section>
               <section className="metadata-section">
                 <h3 className="section-title text-title-w3">
@@ -325,6 +352,7 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
                   uriKey={feature.key}
                 />
               </EditableSection>
+              {renderProgrammaticDesc(feature.programmatic_descriptions.left)}
             </section>
             <section className="right-column">
               <EditableSection title={OWNERS_TITLE}>
@@ -348,7 +376,9 @@ export const FeaturePage: React.FC<FeaturePageProps> = ({
                 </h3>
                 {feature.feature_group}
               </section>
+              {renderProgrammaticDesc(feature.programmatic_descriptions.right)}
             </section>
+            {renderProgrammaticDesc(feature.programmatic_descriptions.other)}
           </section>
         </aside>
         <main className="main-content-panel">

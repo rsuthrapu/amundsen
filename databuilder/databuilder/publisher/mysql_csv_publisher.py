@@ -97,7 +97,7 @@ class MySQLCSVPublisher(Publisher):
         :param files:
         :return:
         """
-        sorted_table_names = [table.name for table in Base.metadata.sorted_tables]
+        sorted_table_names = [table.name for table in Base.metadata.sorted_tables]  # type: ignore
         return sorted(files, key=lambda file: sorted_table_names.index(self._get_table_name_from_file(file)))
 
     def _get_table_name_from_file(self, file: str) -> str:
@@ -166,7 +166,14 @@ class MySQLCSVPublisher(Publisher):
         :param table_name:
         :return:
         """
-        for model in Base._decl_class_registry.values():
+        if hasattr(Base, '_decl_class_registry'):
+            models_generator = Base._decl_class_registry.values()
+        elif hasattr(Base, 'registry'):
+            models_generator = Base.registry._class_registry.values()
+        else:
+            raise Exception(f'Failed to get model for table: {table_name}')
+
+        for model in models_generator:
             if hasattr(model, '__tablename__') and model.__tablename__ == table_name:
                 return model
         return None
@@ -180,8 +187,8 @@ class MySQLCSVPublisher(Publisher):
         :return:
         """
         record = model(**record_dict)
-        record.published_tag = self._publish_tag
-        record.publisher_last_updated_epoch_ms = int(time.time() * 1000)
+        record.published_tag = self._publish_tag  # type: ignore
+        record.publisher_last_updated_epoch_ms = int(time.time() * 1000)  # type: ignore
         return record
 
     def _execute(self, session: Session) -> None:

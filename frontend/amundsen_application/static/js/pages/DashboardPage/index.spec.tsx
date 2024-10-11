@@ -7,13 +7,13 @@ import * as History from 'history';
 import { shallow } from 'enzyme';
 
 import LoadingSpinner from 'components/LoadingSpinner';
-import Breadcrumb from 'components/Breadcrumb';
+import Breadcrumb from 'features/Breadcrumb';
 import BookmarkIcon from 'components/Bookmark/BookmarkIcon';
 import ResourceList from 'components/ResourceList';
 import TabsComponent from 'components/TabsComponent';
 import { dashboardMetadata } from 'fixtures/metadata/dashboard';
 import { ResourceType } from 'interfaces';
-import { NO_TIMESTAMP_TEXT } from '../../constants';
+import { NO_TIMESTAMP_TEXT, STATUS_CODES } from '../../constants';
 import ChartList from './ChartList';
 import DashboardOwnerEditor from './DashboardOwnerEditor';
 import ImagePreview from './ImagePreview';
@@ -31,6 +31,12 @@ jest.mock('config/config-utils', () => ({
   getSourceDisplayName: jest.fn(() => MOCK_DISPLAY_NAME),
   getSourceIconClass: jest.fn(() => MOCK_ICON_CLASS),
   getResourceNotices: jest.fn(() => {}),
+  getFilterConfigByResource: jest.fn(),
+  getDateConfiguration: jest.fn(() => ({
+    dateTimeLong: 'MMMM Do YYYY [at] h:mm:ss a',
+    dateTimeShort: 'MMM DD, YYYY ha z',
+    default: 'MMM DD, YYYY',
+  })),
 }));
 const setStateSpy = jest.spyOn(DashboardPage.prototype, 'setState');
 
@@ -51,7 +57,7 @@ const setup = (
   );
   const props = {
     isLoading: false,
-    statusCode: 200,
+    statusCode: STATUS_CODES.OK,
     dashboard: dashboardMetadata,
     getDashboard: jest.fn(),
     searchDashboardGroup: jest.fn(),
@@ -104,8 +110,7 @@ describe('DashboardPage', () => {
         getDashboardSpy.mockClear();
         setStateSpy.mockClear();
         const newParams = {
-          uri:
-            'testProduct_dashboard://testCluster.testGroupID/testDashboardID',
+          uri: 'testProduct_dashboard://testCluster.testGroupID/testDashboardID',
         };
         const expectedURI = `testProduct_dashboard://testCluster.testGroupID/testDashboardID`;
         const expectedArguments = {
@@ -163,6 +168,7 @@ describe('DashboardPage', () => {
     describe('renders description', () => {
       it('using a ReactMarkdown component', () => {
         const markdown = wrapper.find(ReactMarkdown);
+
         expect(markdown.exists()).toBe(true);
       });
 
@@ -184,6 +190,7 @@ describe('DashboardPage', () => {
 
     it('renders owners', () => {
       const { wrapper } = setup();
+
       expect(wrapper.find(DashboardOwnerEditor).exists()).toBe(true);
     });
 

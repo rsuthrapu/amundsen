@@ -4,7 +4,6 @@
 import * as React from 'react';
 import * as Avatar from 'react-avatar';
 
-// TODO: Use css-modules instead of 'import'
 import './styles.scss';
 
 export interface AvatarLabelProps {
@@ -30,7 +29,7 @@ const AvatarLabel: React.FC<AvatarLabelProps> = ({
       size={24}
       round={round}
     />
-    <span className={`avatar-label body-2 ${labelClass}`}>{label}</span>
+    <span className={`avatar-label text-body-w2 ${labelClass}`}>{label}</span>
   </div>
 );
 

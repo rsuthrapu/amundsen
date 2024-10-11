@@ -10,7 +10,6 @@ function resolve(dir) {
 }
 
 const TSX_PATTERN = /\.ts|\.tsx$/;
-const JSX_PATTERN = /\.jsx?$/;
 const CSS_PATTERN = /\.(sa|sc|c)ss$/;
 const IMAGE_PATTERN = /\.(png|svg|jpg|gif)$/;
 const FONT_PATTERN = /\.(ttf|woff2|otf)$/;
@@ -19,6 +18,8 @@ const PATHS = {
   dist: resolve('../dist'),
   pages: resolve('../js/pages'),
   components: resolve('../js/components'),
+  fixtures: resolve('../js/fixtures'),
+  features: resolve('../js/features'),
   config: resolve('../js/config'),
   ducks: resolve('../js/ducks'),
   interfaces: resolve('../js/interfaces'),
@@ -33,11 +34,6 @@ module.exports = {
         test: TSX_PATTERN,
         exclude: /node_modules/,
         loader: 'ts-loader',
-      },
-      {
-        test: JSX_PATTERN,
-        exclude: /node_modules/,
-        use: 'babel-loader',
       },
       {
         test: CSS_PATTERN,
@@ -69,6 +65,8 @@ module.exports = {
     alias: {
       pages: PATHS.pages,
       components: PATHS.components,
+      features: PATHS.features,
+      fixtures: PATHS.fixtures,
       config: PATHS.config,
       ducks: PATHS.ducks,
       interfaces: PATHS.interfaces,

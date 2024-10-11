@@ -10,6 +10,7 @@ import sys
 
 from flask import Blueprint, Flask
 from flask_restful import Api
+from typing import Optional
 
 from amundsen_application.api import init_routes
 from amundsen_application.api.announcements.v0 import announcements_blueprint
@@ -22,6 +23,7 @@ from amundsen_application.api.preview.dashboard.v0 import \
 from amundsen_application.api.preview.v0 import preview_blueprint
 from amundsen_application.api.quality.v0 import quality_blueprint
 from amundsen_application.api.search.v1 import search_blueprint
+from amundsen_application.api.notice.v0 import notices_blueprint
 from amundsen_application.api.v0 import blueprint
 from amundsen_application.deprecations import process_deprecations
 
@@ -47,7 +49,7 @@ STATIC_ROOT = os.getenv('STATIC_ROOT', 'static')
 static_dir = os.path.join(PROJECT_ROOT, STATIC_ROOT)
 
 
-def create_app(config_module_class: str = None, template_folder: str = None) -> Flask:
+def create_app(config_module_class: Optional[str] = None, template_folder: Optional[str] = None) -> Flask:
     """ Support for importing arguments for a subclass of flask.Flask """
     args = ast.literal_eval(FLASK_APP_KWARGS_DICT_STR) if FLASK_APP_KWARGS_DICT_STR else {}
 
@@ -86,6 +88,7 @@ def create_app(config_module_class: str = None, template_folder: str = None) -> 
     app.register_blueprint(preview_blueprint)
     app.register_blueprint(quality_blueprint)
     app.register_blueprint(search_blueprint)
+    app.register_blueprint(notices_blueprint)
     app.register_blueprint(api_bp)
     app.register_blueprint(dashboard_preview_blueprint)
     init_routes(app)

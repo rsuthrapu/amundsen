@@ -15,10 +15,7 @@ import {
 
 /** HELPERS **/
 import { indexDashboardsEnabled } from 'config/config-utils';
-import {
-  createOwnerUpdatePayload,
-  getOwnersDictFromUsers,
-} from 'utils/ownerUtils';
+import { createOwnerUpdatePayload, getOwnersDictFromUsers } from 'utils/owner';
 import {
   getTableQueryParams,
   getRelatedDashboardSlug,
@@ -27,6 +24,8 @@ import {
   shouldSendNotification,
   getTypeMetadataFromKey,
 } from './helpers';
+
+const JSONBig = require('json-bigint');
 
 export const API_PATH = '/api/metadata/v0';
 
@@ -68,9 +67,8 @@ export function getTableDashboards(tableKey: string) {
 
   const relatedDashboardsSlug: string = getRelatedDashboardSlug(tableKey);
   const relatedDashboardsURL: string = `${API_PATH}/table/${relatedDashboardsSlug}/dashboards`;
-  const relatedDashboardsRequest = axios.get<RelatedDashboardDataAPI>(
-    relatedDashboardsURL
-  );
+  const relatedDashboardsRequest =
+    axios.get<RelatedDashboardDataAPI>(relatedDashboardsURL);
 
   return relatedDashboardsRequest
     .then(
@@ -88,10 +86,12 @@ export function getTableDashboards(tableKey: string) {
 
 export function getTableDescription(tableData: TableMetadata) {
   const tableParams = getTableQueryParams({ key: tableData.key });
+
   return axios
     .get(`${API_PATH}/get_table_description?${tableParams}`)
     .then((response: AxiosResponse<DescriptionAPI>) => {
       tableData.description = response.data.description;
+
       return tableData;
     });
 }
@@ -109,6 +109,7 @@ export function updateTableDescription(
 
 export function getTableOwners(key: string) {
   const tableParams = getTableQueryParams({ key });
+
   return axios
     .get(`${API_PATH}/table?${tableParams}`)
     .then((response: AxiosResponse<TableDataAPI>) =>
@@ -154,15 +155,18 @@ export function getColumnDescription(
     key: tableData.key,
     column_name: extractColumnName(columnKey),
   });
+
   return axios
     .get(`${API_PATH}/get_column_description?${tableParams}`)
     .then((response: AxiosResponse<DescriptionAPI>) => {
       const column = tableData.columns.find(
         (column) => column.key === columnKey
       );
+
       if (column) {
         column.description = response.data.description;
       }
+
       return tableData;
     });
 }
@@ -190,9 +194,11 @@ export function getTypeMetadataDescription(
     )
     .then((response: AxiosResponse<DescriptionAPI>) => {
       const typeMetadata = getTypeMetadataFromKey(typeMetadataKey, tableData);
+
       if (typeMetadata) {
         typeMetadata.description = response.data.description;
       }
+
       return tableData;
     });
 }
@@ -215,6 +221,7 @@ export function getPreviewData(queryParams: TablePreviewQueryParams) {
     url: '/api/preview/v0/',
     method: 'POST',
     data: queryParams,
+    transformResponse: (data) => JSONBig.parse(data),
   })
     .then((response: AxiosResponse<PreviewDataAPI>) => ({
       data: response.data.previewData,
@@ -223,10 +230,12 @@ export function getPreviewData(queryParams: TablePreviewQueryParams) {
     .catch((e: AxiosError<PreviewDataAPI>) => {
       const { response } = e;
       let data = {};
+
       if (response && response.data && response.data.previewData) {
         data = response.data.previewData;
       }
       const status = response ? response.status : null;
+
       return Promise.reject({ data, status });
     });
 }
@@ -235,6 +244,7 @@ export function getTableQualityChecksSummary(key: string) {
   const tableQueryParams = getTableQueryParams({
     key,
   });
+
   return axios
     .get(`/api/quality/v0/table/summary?${tableQueryParams}`)
     .then((response: AxiosResponse<TableQualityChecksAPI>) => ({
@@ -244,6 +254,7 @@ export function getTableQualityChecksSummary(key: string) {
     .catch((e) => {
       const { response } = e;
       const status = response ? response.status : null;
+
       return Promise.reject({ status });
     });
 }

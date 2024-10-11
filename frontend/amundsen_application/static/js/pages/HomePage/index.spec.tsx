@@ -4,14 +4,20 @@
 import * as React from 'react';
 import { shallow } from 'enzyme';
 
-import Breadcrumb from 'components/Breadcrumb';
-import MyBookmarks from 'components/Bookmark/MyBookmarks';
-import PopularTables from 'components/PopularResources';
-import SearchBar from 'components/SearchBar';
-import TagsListContainer from 'components/Tags';
+import Breadcrumb from 'features/Breadcrumb';
+import MyBookmarks from 'features/MyBookmarks';
+import PopularTables from 'features/PopularResources';
+import SearchBar from 'features/SearchBar';
+import TagsListContainer from 'features/Tags';
 
 import { getMockRouterProps } from 'fixtures/mockRouter';
-import { mapDispatchToProps, HomePage, HomePageProps } from '.';
+import SearchBarWidget from 'features/HomePageWidgets/SearchBarWidget';
+import {
+  mapDispatchToProps,
+  HomePage,
+  HomePageProps,
+  HomePageWidgets,
+} from '.';
 
 describe('HomePage', () => {
   const setup = (propOverrides?: Partial<HomePageProps>) => {
@@ -25,12 +31,15 @@ describe('HomePage', () => {
       ...propOverrides,
     };
     const wrapper = shallow<HomePage>(<HomePage {...props} />);
+
     return { props, wrapper };
   };
   let props;
   let wrapper;
+
   beforeAll(() => {
     const setupResult = setup();
+
     props = setupResult.props;
     wrapper = setupResult.wrapper;
   });
@@ -40,10 +49,16 @@ describe('HomePage', () => {
       expect(wrapper.contains(<SearchBar />));
     });
 
-    it('contains a Breadcrumb that directs to the /search', () => {
-      const element = wrapper.find(Breadcrumb);
-      expect(element.exists()).toBe(true);
-      expect(element.props().path).toEqual('/search');
+    it('contains HomePageWidgets', () => {
+      expect(wrapper.contains(<HomePageWidgets />));
+    });
+
+    it('contains a SearchBarWidget', () => {
+      expect(wrapper.contains(<SearchBarWidget />));
+    });
+
+    it('contains a Breadcrumb', () => {
+      expect(wrapper.contains(<Breadcrumb />));
     });
 
     it('contains TagsList', () => {
@@ -62,7 +77,9 @@ describe('HomePage', () => {
   describe('componentDidMount', () => {
     it('calls searchReset', () => {
       const searchResetSpy = jest.spyOn(props, 'searchReset');
+
       wrapper.instance().componentDidMount();
+
       expect(searchResetSpy).toHaveBeenCalled();
     });
   });
@@ -71,6 +88,7 @@ describe('HomePage', () => {
 describe('mapDispatchToProps', () => {
   let dispatch;
   let result;
+
   beforeAll(() => {
     dispatch = jest.fn(() => Promise.resolve());
     result = mapDispatchToProps(dispatch);

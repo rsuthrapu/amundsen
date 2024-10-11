@@ -1,3 +1,6 @@
+// Copyright Contributors to the Amundsen project.
+// SPDX-License-Identifier: Apache-2.0
+
 import { PeopleUser } from './User';
 import { Badge } from './Badges';
 
@@ -73,6 +76,7 @@ export interface TableResource extends Resource {
   schema_description?: string;
   badges?: Badge[];
   highlight?: TableSearchHighlights;
+  link?: string;
 }
 
 export enum SortDirection {

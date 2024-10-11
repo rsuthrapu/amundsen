@@ -1,7 +1,6 @@
 // Copyright Contributors to the Amundsen project.
 // SPDX-License-Identifier: Apache-2.0
 
-import * as React from 'react';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 
@@ -9,8 +8,7 @@ import { ResourceType, Badge } from 'interfaces';
 
 import { updateSearchState } from 'ducks/search/reducer';
 import { UpdateSearchStateRequest } from 'ducks/search/types';
-// TODO - Dedupe or rename "components/BadgeList" and "features/BadgeList" to avoid collisions
-import BadgeList from 'components/Badges/BadgeList';
+import BadgeList from 'features/Badges/BadgeList';
 
 export interface DispatchFromProps {
   onBadgeClick: (badgeText: string) => UpdateSearchStateRequest;

@@ -11,8 +11,8 @@ Amundsen Databuilder is a data ingestion library, which is inspired by [Apache G
 For information about Amundsen and our other services, visit the [main repository](https://github.com/amundsen-io/amundsen#amundsen) `README.md` . Please also see our instructions for a [quick start](https://github.com/amundsen-io/amundsen/blob/master/docs/installation.md#bootstrap-a-default-version-of-amundsen-using-docker) setup  of Amundsen with dummy data, and an [overview of the architecture](https://github.com/amundsen-io/amundsen/blob/master/docs/architecture.md#architecture).
 
 ## Requirements
-- Python >= 3.6.x
-- elasticsearch 6.x (currently it doesn't support 7.x)
+- Python >= 3.8.x
+- elasticsearch 7.x
 
 ## Doc
 - https://www.amundsen.io/amundsen/
@@ -471,7 +471,7 @@ The API calls driving the extraction is defined [here](https://github.com/amunds
 
 You will need to create a service account for reading metadata and grant it "BigQuery Metadata Viewer" access to all of your datasets. This can all be done via the bigquery ui.
 
-Download the creditials file and store it securely. Set the `GOOGLE_APPLICATION_CREDENTIALS` environment varible to the location of your credtials files and your code should have access to everything it needs.
+Download the credentials file and store it securely. Set the `GOOGLE_APPLICATION_CREDENTIALS` environment varible to the location of your credtials files and your code should have access to everything it needs.
 
 You can configure bigquery like this. You can optionally set a label filter if you only want to pull tables with a certain label.
 ```python
@@ -1654,6 +1654,28 @@ job = DefaultJob(
         loader=AnyLoader()))
 job.launch()
 ```
+
+#### [KafkaSchemaRegistryExtractor](https://github.com/amundsen-io/amundsen/blob/main/databuilder/databuilder/extractor/kafka_schema_registry_extractor.py "KafkaSchemaRegistryExtractor")
+
+An extractor that extracts schema metadata Confluent Kafka Schema registry with Avro format.
+
+A sample job config is shown below.
+
+```python
+job_config = ConfigFactory.from_dict({
+    f"extractor.kafka_schema_registry.{KafkaSchemaRegistryExtractor.REGISTRY_URL_KEY}": "http://localhost:8081",
+    f"extractor.kafka_schema_registry.{KafkaSchemaRegistryExtractor.REGISTRY_USERNAME_KEY}": "username",
+    f"extractor.kafka_schema_registry.{KafkaSchemaRegistryExtractor.REGISTRY_PASSWORD_KEY}": "password",
+})
+job = DefaultJob(
+    conf=job_config,
+    task=DefaultTask(
+        extractor=KafkaSchemaRegistryExtractor(),
+        loader=AnyLoader()))
+job.launch()
+```
+
+**Note: username and password are not mandatory. Only provide if you schema registry need authorization.**
 
 ## List of transformers
 

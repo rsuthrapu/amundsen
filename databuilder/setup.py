@@ -5,7 +5,7 @@ import os
 
 from setuptools import find_packages, setup
 
-__version__ = '6.12.0'
+__version__ = '7.5.1'
 
 requirements_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                  'requirements.txt')
@@ -17,7 +17,7 @@ requirements_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 with open(requirements_path, 'r') as requirements_file:
     requirements_dev = requirements_file.readlines()
 
-kafka = ['confluent-kafka==1.0.0']
+kafka = ['confluent-kafka==2.3.0']
 
 cassandra = ['cassandra-driver==3.20.1']
 
@@ -63,14 +63,14 @@ neptune = [
     'Flask==1.0.2',
     'gremlinpython==3.4.3',
     'requests-aws4auth==1.1.0',
-    'typing-extensions==4.0.0',
+    'typing-extensions==4.1.0',
     'overrides==2.5',
     'boto3==1.17.23'
 ]
 
 feast = [
-    'feast==0.17.0',
-    'fastapi!=0.76.*'
+    'feast==0.34.0',
+    'dask[dataframe]<=2024.5.0',
 ]
 
 atlas = [
@@ -83,7 +83,7 @@ oracle = [
 ]
 
 rds = [
-    'sqlalchemy>=1.3.6,<1.4',
+    'sqlalchemy>=1.3.6',
     'mysqlclient>=1.3.6,<3'
 ]
 
@@ -95,9 +95,13 @@ teradata = [
     'teradatasqlalchemy==17.0.0.0'
 ]
 
+schema_registry = [
+    'python-schema-registry-client==2.4.0'
+]
+
 all_deps = requirements + requirements_dev + kafka + cassandra + glue + snowflake + athena + \
     bigquery + jsonpath + db2 + dremio + druid + spark + feast + neptune + rds \
-    + atlas + salesforce + oracle + teradata
+    + atlas + salesforce + oracle + teradata + schema_registry
 
 setup(
     name='amundsen-databuilder',
@@ -110,8 +114,29 @@ setup(
     include_package_data=True,
     dependency_links=[],
     install_requires=requirements,
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     extras_require={
+        'all': all_deps,
+        'dev': requirements_dev,
+        'kafka': kafka,  # To use with Kafka source extractor
+        'cassandra': cassandra,
+        'glue': glue,
+        'snowflake': snowflake,
+        'athena': athena,
+        'bigquery': bigquery,
+        'jsonpath': jsonpath,
+        'db2': db2,
+        'dremio': dremio,
+        'druid': druid,
+        'neptune': neptune,
+        'delta': spark,
+        'feast': feast,
+        'atlas': atlas,
+        'rds': rds,
+        'salesforce': salesforce,
+        'oracle': oracle,
+        'teradata': teradata,
+        'schema_registry': schema_registry,
       'all': 'all_deps',
         'dev': 'requirements_dev',
         'kafka': 'kafka',  # To use with Kafka source extractor
@@ -134,6 +159,8 @@ setup(
         'teradata': 'teradata',
     },
     classifiers=[
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
 )

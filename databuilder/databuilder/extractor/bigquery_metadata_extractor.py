@@ -85,11 +85,11 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
                     cluster=tableRef['projectId'],
                     schema=tableRef['datasetId'],
                     name=table_id,
-                    description=table.get('description', ''),
+                    description=table.get('description', None),
                     columns=cols,
                     is_view=table['type'] == 'VIEW')
 
-                yield(table_meta)
+                yield table_meta
 
     def _iterate_over_cols(self,
                            parent: str,
@@ -106,7 +106,7 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
         if column['type'] == 'RECORD':
             col = ColumnMetadata(
                 name=col_name,
-                description=column.get('description', ''),
+                description=column.get('description', None),
                 col_type=get_column_type(column),
                 sort_order=total_cols)
             cols.append(col)
@@ -121,7 +121,7 @@ class BigQueryMetadataExtractor(BaseBigQueryExtractor):
         else:
             col = ColumnMetadata(
                 name=col_name,
-                description=column.get('description', ''),
+                description=column.get('description', None),
                 col_type=get_column_type(column),
                 sort_order=total_cols)
             cols.append(col)

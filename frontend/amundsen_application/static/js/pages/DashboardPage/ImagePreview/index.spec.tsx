@@ -23,19 +23,24 @@ describe('ImagePreview', () => {
     };
 
     const wrapper = mount<ImagePreview>(<ImagePreview {...props} />);
+
     return { props, wrapper };
   };
 
   describe('onSuccess', () => {
     let currentState;
+
     beforeAll(() => {
       const { wrapper } = setup();
+
       wrapper.instance().onSuccess();
       currentState = wrapper.state();
     });
+
     it('sets the loading state to false', () => {
       expect(currentState.isLoading).toBe(false);
     });
+
     it('sets the hasError state to false', () => {
       expect(currentState.hasError).toBe(false);
     });
@@ -43,15 +48,18 @@ describe('ImagePreview', () => {
 
   describe('onError', () => {
     let currentState;
+
     beforeAll(() => {
       const { wrapper } = setup();
-      const event = {} as React.SyntheticEvent<HTMLImageElement>;
-      wrapper.instance().onError(event);
+
+      wrapper.instance().onError();
       currentState = wrapper.state();
     });
+
     it('sets the loading state to false', () => {
       expect(currentState.isLoading).toBe(false);
     });
+
     it('sets the hasError state to false', () => {
       expect(currentState.hasError).toBe(true);
     });
@@ -61,6 +69,7 @@ describe('ImagePreview', () => {
     describe('when no error', () => {
       describe('when loading', () => {
         let wrapper;
+
         beforeAll(() => {
           wrapper = setup().wrapper;
           wrapper.instance().setState({ isLoading: true, hasError: false });
@@ -82,9 +91,8 @@ describe('ImagePreview', () => {
         let wrapper;
 
         beforeAll(() => {
-          const setupResult = setup();
-          props = setupResult.props;
-          wrapper = setupResult.wrapper;
+          ({ props, wrapper } = setup());
+
           wrapper.instance().setState({ isLoading: false, hasError: false });
           wrapper.update();
         });
@@ -138,6 +146,7 @@ describe('ImagePreview', () => {
         wrapper.find('.preview-button').simulate('click');
 
         const actual = wrapper.find(Modal).length;
+
         expect(actual).toEqual(expected);
       });
 
@@ -149,6 +158,7 @@ describe('ImagePreview', () => {
           wrapper.find('.modal-header .close').simulate('click');
 
           const actual = wrapper.find(Modal).length;
+
           expect(actual).toEqual(expected);
         });
       });

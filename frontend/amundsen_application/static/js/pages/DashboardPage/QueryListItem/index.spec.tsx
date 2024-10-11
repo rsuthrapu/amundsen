@@ -17,6 +17,7 @@ const setup = (propOverrides?: Partial<QueryListItemProps>) => {
   };
   // eslint-disable-next-line react/jsx-props-no-spreading
   const wrapper = mount(<QueryListItem {...props} />);
+
   return { props, wrapper };
 };
 
@@ -80,7 +81,7 @@ describe('QueryListItem', () => {
   describe('lifetime', () => {
     describe('when clicked on the item', () => {
       it('should render the expanded content', () => {
-        const { wrapper, props } = setup();
+        const { wrapper } = setup();
         const expected = 1;
 
         wrapper.find('.query-list-header').simulate('click');
@@ -91,7 +92,7 @@ describe('QueryListItem', () => {
 
       describe('when clicking again', () => {
         it('should hide the expanded content', () => {
-          const { wrapper, props } = setup();
+          const { wrapper } = setup();
           const expected = 0;
 
           wrapper.find('.query-list-header').simulate('click');

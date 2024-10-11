@@ -103,6 +103,7 @@ export class TableIssues extends React.Component<TableIssueProps> {
     if (issues.length === 0) {
       return <div className="issue-banner">{NO_DATA_ISSUES_TEXT}</div>;
     }
+
     return issues.map(this.renderIssue);
   };
 
@@ -136,7 +137,7 @@ export class TableIssues extends React.Component<TableIssueProps> {
       <span className="table-more-issues" key="more-issue-link">
         {openIssuesUrl && (
           <a
-            id="open-issues-link"
+            data-type="open-issues-link"
             className="table-issue-more-issues"
             target="_blank"
             rel="noreferrer"

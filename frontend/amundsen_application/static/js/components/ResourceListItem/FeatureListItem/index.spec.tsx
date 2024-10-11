@@ -21,6 +21,7 @@ const MOCK_ICON_CLASS = 'test-class';
 jest.mock('config/config-utils', () => ({
   getSourceDisplayName: jest.fn(() => MOCK_DISPLAY_NAME),
   getSourceIconClass: jest.fn(() => MOCK_ICON_CLASS),
+  getFilterConfigByResource: jest.fn(),
 }));
 
 describe('FeatureListItem', () => {
@@ -38,6 +39,7 @@ describe('FeatureListItem', () => {
       // eslint-disable-next-line react/jsx-props-no-spreading
       <FeatureListItem {...props} />
     );
+
     return { props, wrapper };
   };
 
@@ -47,6 +49,7 @@ describe('FeatureListItem', () => {
 
     beforeAll(() => {
       const setupResult = setup();
+
       props = setupResult.props;
       wrapper = setupResult.wrapper;
     });
@@ -60,6 +63,7 @@ describe('FeatureListItem', () => {
 
     describe('renders resource-info section', () => {
       let resourceInfo;
+
       beforeAll(() => {
         resourceInfo = wrapper.find('.resource-info');
       });
@@ -92,6 +96,7 @@ describe('FeatureListItem', () => {
 
     describe('renders resource-source section', () => {
       let resourceType;
+
       beforeAll(() => {
         resourceType = wrapper.find('.resource-source');
       });
@@ -104,8 +109,10 @@ describe('FeatureListItem', () => {
         );
       });
     });
+
     describe('renders resource-badges section', () => {
       let resourceBadges;
+
       beforeAll(() => {
         resourceBadges = wrapper.find('.resource-badges');
       });
@@ -125,6 +132,7 @@ describe('FeatureListItem', () => {
 
     describe('renders resource-entity section', () => {
       let resourceEntity;
+
       beforeAll(() => {
         resourceEntity = wrapper.find('.resource-entity');
       });

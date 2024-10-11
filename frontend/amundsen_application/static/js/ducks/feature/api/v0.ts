@@ -13,6 +13,8 @@ import {
 import { API_PATH } from 'ducks/tableMetadata/api/v0';
 import { getQueryParams } from 'ducks/utilMethods';
 
+import { STATUS_CODES } from '../../../constants';
+
 export type GetFeatureAPI = {
   msg: string;
   featureData: FeatureMetadata;
@@ -26,10 +28,12 @@ const FEATURE_BASE = '/api/metadata/v0';
 
 export function getFeature(key: string, index?: string, source?: string) {
   const queryParams = qs.stringify({ key, index, source });
+
   return axios
     .get(`${FEATURE_BASE}/feature?${queryParams}`)
     .then((response: AxiosResponse<GetFeatureAPI>) => {
       const { data, status } = response;
+
       return {
         feature: data.featureData,
         statusCode: status,
@@ -38,7 +42,8 @@ export function getFeature(key: string, index?: string, source?: string) {
     .catch((e) => {
       const { response } = e;
       const statusMessage = response.data?.msg;
-      const statusCode = response?.status || 500;
+      const statusCode = response?.status || STATUS_CODES.INTERNAL_SERVER_ERROR;
+
       return Promise.reject({
         statusCode,
         statusMessage,
@@ -60,6 +65,7 @@ export function getFeaturePreviewData(queryParams: FeaturePreviewQueryParams) {
       const { response } = e;
       const previewData = response?.data?.previewData || {};
       const status = response ? response.status : null;
+
       return Promise.reject({ previewData, status });
     });
 }
@@ -70,10 +76,12 @@ export type GetFeatureCodeAPI = {
 };
 export function getFeatureCode(key: string) {
   const queryParams = qs.stringify({ key });
+
   return axios
     .get(`${FEATURE_BASE}/get_feature_generation_code?${queryParams}`)
     .then((response: AxiosResponse<GetFeatureCodeAPI>) => {
       const { data, status } = response;
+
       return {
         featureCode: data,
         statusCode: status,
@@ -82,7 +90,8 @@ export function getFeatureCode(key: string) {
     .catch((e) => {
       const { response } = e;
       const statusMessage = response.data?.msg;
-      const statusCode = response?.status || 500;
+      const statusCode = response?.status || STATUS_CODES.INTERNAL_SERVER_ERROR;
+
       return Promise.reject({
         statusCode,
         statusMessage,
@@ -97,10 +106,12 @@ export type GetFeatureDescriptionAPI = {
 
 export function getFeatureDescription(key: string) {
   const queryParams = qs.stringify({ key });
+
   return axios
     .get(`${FEATURE_BASE}/get_feature_description?${queryParams}`)
     .then((response: AxiosResponse<GetFeatureDescriptionAPI>) => {
       const { data, status } = response;
+
       return {
         description: data.description,
         statusCode: status,
@@ -109,7 +120,8 @@ export function getFeatureDescription(key: string) {
     .catch((e) => {
       const { response } = e;
       const statusMessage = response.data?.msg;
-      const statusCode = response?.status || 500;
+      const statusCode = response?.status || STATUS_CODES.INTERNAL_SERVER_ERROR;
+
       return Promise.reject({
         statusCode,
         statusMessage,
@@ -125,6 +137,7 @@ export function updateFeatureDescription(key: string, description: string) {
     })
     .then((response: AxiosResponse<GetFeatureAPI>) => {
       const { data, status } = response;
+
       return {
         feature: data.featureData,
         statusCode: status,
@@ -133,7 +146,8 @@ export function updateFeatureDescription(key: string, description: string) {
     .catch((e) => {
       const { response } = e;
       const statusMessage = response.data?.msg;
-      const statusCode = response?.status || 500;
+      const statusCode = response?.status || STATUS_CODES.INTERNAL_SERVER_ERROR;
+
       return Promise.reject({
         statusCode,
         statusMessage,
@@ -143,6 +157,7 @@ export function updateFeatureDescription(key: string, description: string) {
 
 export function getFeatureOwners(key: string) {
   const queryParams = getQueryParams({ key });
+
   return axios
     .get(`${API_PATH}/feature?${queryParams}`)
     .then(

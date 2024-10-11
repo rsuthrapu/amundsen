@@ -5,10 +5,12 @@ import { getLastIndexedFailure, getLastIndexedSuccess } from './reducer';
 import { GetLastIndexed, GetLastIndexedRequest } from './types';
 
 export function* getLastIndexedWorker(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   action: GetLastIndexedRequest
 ): SagaIterator {
   try {
     const lastIndexed = yield call(API.getLastIndexed);
+
     if (lastIndexed) {
       yield put(getLastIndexedSuccess(lastIndexed));
     } else {

@@ -23,6 +23,7 @@ const TABLE_VIEW_TEXT = 'table view';
 jest.mock('config/config-utils', () => ({
   getDisplayNameByResource: jest.fn(),
   getSourceDisplayName: jest.fn(),
+  getFilterConfigByResource: jest.fn(),
 }));
 
 let noDatabase;
@@ -47,6 +48,7 @@ const setup = (propOverrides?: Partial<TableHeaderBulletsProps>) => {
       </BrowserRouter>
     </Provider>
   );
+
   return { props, wrapper };
 };
 
@@ -57,12 +59,14 @@ describe('TableHeaderBullets', () => {
       cluster: noCluster,
       isView: noIsView,
     });
+
     it('renders TableHeaderBullets element', () => {
       const actual = wrapper.find('.header-bullets').length;
       const expected = 1;
 
       expect(actual).toEqual(expected);
     });
+
     it('renders TableHeaderBullets list with default props', () => {
       const actualDatabase = wrapper.find('ul').find('li').at(0).text();
       const expectedDatabase = '';
@@ -88,9 +92,7 @@ describe('TableHeaderBullets', () => {
       mocked(getDisplayNameByResource).mockImplementation(
         () => MOCK_RESOURCE_DISPLAY_NAME
       );
-      const setupResult = setup();
-      props = setupResult.props;
-      wrapper = setupResult.wrapper;
+      ({ props, wrapper } = setup());
     });
 
     it('renders TableHeaderBullets element', () => {
@@ -99,12 +101,14 @@ describe('TableHeaderBullets', () => {
 
       expect(actual).toEqual(expected);
     });
+
     it('renders a list with resource display name', () => {
       expect(getDisplayNameByResource).toHaveBeenCalledWith(ResourceType.table);
       expect(wrapper.find('ul').find('li').at(0).text()).toEqual(
         MOCK_RESOURCE_DISPLAY_NAME
       );
     });
+
     it('renders a list with database display name', () => {
       expect(getSourceDisplayName).toHaveBeenCalledWith(
         props.database,
@@ -114,9 +118,11 @@ describe('TableHeaderBullets', () => {
         MOCK_DB_DISPLAY_NAME
       );
     });
+
     it('renders a list with cluster', () => {
       expect(wrapper.find('ul').find('li').at(2).text()).toEqual(props.cluster);
     });
+
     it('renders a list with table view', () => {
       expect(wrapper.find('ul').find('li').at(3).text()).toEqual(
         TABLE_VIEW_TEXT

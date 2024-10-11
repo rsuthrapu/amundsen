@@ -11,6 +11,7 @@ import Table, {
 } from 'components/Table';
 import {
   getMaxNestedColumns,
+  getIconNotRequiredStatTypes,
   getTableSortCriterias,
 } from 'config/config-utils';
 
@@ -25,7 +26,7 @@ import {
 } from 'interfaces';
 import { FormattedDataType, ContentType } from 'interfaces/ColumnList';
 import { logAction } from 'utils/analytics';
-import { buildTableKey, TablePageParams } from 'utils/navigationUtils';
+import { buildTableKey, TablePageParams } from 'utils/navigation';
 
 import { GraphIcon } from 'components/SVGIcons/GraphIcon';
 
@@ -77,6 +78,7 @@ const getSortingFunction = (
     if (a[sortBy.key] && b[sortBy.key]) {
       return a[sortBy.key].localeCompare(b[sortBy.key]);
     }
+
     return null;
   };
 
@@ -94,6 +96,7 @@ const hasTypeMetadataWithBadge = (typeMetadata: TypeMetadata[]) =>
     if (tm.badges?.length) {
       return true;
     }
+
     return hasTypeMetadataWithBadge(tm.children || []);
   });
 
@@ -102,6 +105,7 @@ const hasColumnWithBadge = (columns: TableColumn[]) =>
     if (col.badges?.length) {
       return true;
     }
+
     return (
       col.type_metadata?.badges?.length ||
       hasTypeMetadataWithBadge(col.type_metadata?.children || [])
@@ -118,6 +122,23 @@ const getUsageStat = (item) => {
   }
 
   return null;
+};
+
+const hasStatsToDisplayIcon = (stats) => {
+  let hasStatsToDisplayIcon = !!stats.length;
+
+  const statTypesToExclude = getIconNotRequiredStatTypes();
+
+  if (hasStatsToDisplayIcon && statTypesToExclude) {
+    const allStatTypes = stats.map((stat) => stat.stat_type);
+    const statsToInclude = allStatTypes.filter(
+      (type) => !statTypesToExclude.includes(type)
+    );
+
+    hasStatsToDisplayIcon = !!statsToInclude.length;
+  }
+
+  return hasStatsToDisplayIcon;
 };
 
 const getColumnMetadataIconElement = (key, popoverText, iconElement) => (
@@ -150,12 +171,13 @@ const ColumnList: React.FC<ColumnListProps> = ({
   const hasColumnBadges = hasColumnWithBadge(columns);
   const formatColumnData = (item, index) => {
     const hasItemStats = !!item.stats.length;
+
     return {
       stats: hasItemStats ? item.stats : null,
       content: {
         title: item.name,
         description: item.description,
-        hasStats: hasItemStats,
+        hasStats: hasStatsToDisplayIcon(item.stats),
       },
       type: {
         type: item.col_type,
@@ -185,11 +207,13 @@ const ColumnList: React.FC<ColumnListProps> = ({
   let orderedData = formattedData.sort(
     getSortingFunction(formattedData, sortBy)
   );
+
   if (sortBy.direction === SortDirection.ascending) {
     orderedData = orderedData.reverse();
   }
 
   let tableKey;
+
   if (orderedData.length) {
     tableKey = buildTableKey(orderedData[0].tableParams);
   }
@@ -204,12 +228,14 @@ const ColumnList: React.FC<ColumnListProps> = ({
         columnDetails: FormattedDataType
       ) => {
         let columnMetadataIcons: React.ReactNode[] = [];
+
         if (hasStats) {
           const hasStatsIcon = getColumnMetadataIconElement(
             'has-stats',
             HAS_COLUMN_STATS_TEXT,
             <GraphIcon size={IconSizes.SMALL} />
           );
+
           columnMetadataIcons = [...columnMetadataIcons, hasStatsIcon];
         }
 

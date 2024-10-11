@@ -9,7 +9,7 @@ import { RootState } from '../rootReducer';
 export const analyticsMiddleware: Middleware<
   {}, // legacy type parameter added to satisfy interface signature
   RootState
-> = ({ getState }) => (next) => (action) => {
+> = () => (next) => (action) => {
   const result = next(action);
 
   // Intercept actions with meta analytics
@@ -18,6 +18,7 @@ export const analyticsMiddleware: Middleware<
   }
 
   const { name, payload } = action.meta.analytics;
+
   trackEvent(name, payload);
 
   return result;

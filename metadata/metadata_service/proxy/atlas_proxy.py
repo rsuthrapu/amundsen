@@ -8,7 +8,7 @@ from collections import defaultdict
 from operator import attrgetter
 from random import randint
 from typing import (Any, Dict, Generator, List, Optional, Set, Tuple, Type,
-                    Union)
+                    Union, no_type_check)
 
 from amundsen_common.entity.resource_type import ResourceType
 from amundsen_common.models.dashboard import DashboardSummary
@@ -76,7 +76,8 @@ class AtlasProxy(BaseProxy):
                  password: str = '',
                  encrypted: bool = False,
                  validate_ssl: bool = False,
-                 client_kwargs: dict = dict()) -> None:
+                 client_kwargs: dict = dict(),
+                 **kwargs: dict) -> None:
         """
         Initiate the Apache Atlas client with the provided credentials
         """
@@ -373,7 +374,7 @@ class AtlasProxy(BaseProxy):
 
         return sorted(parsed_reports)
 
-    def _get_owners(self, data_owners: list, fallback_owner: str = None) -> List[User]:
+    def _get_owners(self, data_owners: list, fallback_owner: Optional[str] = None) -> List[User]:
         owners_detail = list()
         active_owners_list = list()
 
@@ -393,9 +394,11 @@ class AtlasProxy(BaseProxy):
     def get_user(self, *, id: str) -> Union[UserEntity, None]:
         pass
 
+    @no_type_check
     def create_update_user(self, *, user: User) -> Tuple[User, bool]:
         pass
 
+    @no_type_check
     def get_users(self) -> List[UserEntity]:
         pass
 
@@ -842,6 +845,7 @@ class AtlasProxy(BaseProxy):
 
         return date or 0
 
+    @no_type_check
     def get_statistics(self) -> Dict[str, Any]:
         # Not implemented
         pass
@@ -1674,9 +1678,11 @@ class AtlasProxy(BaseProxy):
 
         return lineage
 
+    @no_type_check
     def get_feature(self, *, feature_uri: str) -> Feature:
         pass
 
+    @no_type_check
     def get_resource_description(self, *,
                                  resource_type: ResourceType,
                                  uri: str) -> Description:
@@ -1700,6 +1706,7 @@ class AtlasProxy(BaseProxy):
                               owner: str) -> None:
         pass
 
+    @no_type_check
     def get_resource_generation_code(self, *,
                                      uri: str,
                                      resource_type: ResourceType) -> GenerationCode:

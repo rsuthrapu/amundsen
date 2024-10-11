@@ -5,13 +5,14 @@ import { GlobalState } from 'ducks/rootReducer';
 
 import globalState from 'fixtures/globalState';
 import { activeUser0 } from 'fixtures/metadata/users';
-import { getOwnerItemPropsFromUsers } from 'utils/ownerUtils';
+import { getOwnerItemPropsFromUsers } from 'utils/owner';
 import { FEATURE_OWNER_SOURCE, mapDispatchToProps, mapStateToProps } from '.';
 
 describe('mapStateToProps', () => {
   let result;
   let expectedItemProps;
   let mockState: GlobalState;
+
   beforeAll(() => {
     mockState = {
       ...globalState,
@@ -32,6 +33,7 @@ describe('mapStateToProps', () => {
       mockState.feature.feature.owners,
       FEATURE_OWNER_SOURCE
     );
+
     expect(result.isLoading).toEqual(mockState.feature.isLoadingOwners);
     expect(result.itemProps).toEqual(expectedItemProps);
   });
@@ -40,6 +42,7 @@ describe('mapStateToProps', () => {
 describe('mapDispatchToProps', () => {
   let dispatch;
   let result;
+
   beforeAll(() => {
     dispatch = jest.fn(() => Promise.resolve());
     result = mapDispatchToProps(dispatch);

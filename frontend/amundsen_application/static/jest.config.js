@@ -42,12 +42,14 @@ module.exports = {
   coveragePathIgnorePatterns: [
     'stories/*',
     'constants.ts',
+    'testDataBuilder.ts',
     '.story.tsx',
     'js/index.tsx',
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
     '^.+\\.(css|scss)$': '<rootDir>/node_modules/jest-css-modules',
+    '^axios$': 'axios/dist/node/axios.cjs',
   },
   globals: {
     'ts-jest': {
