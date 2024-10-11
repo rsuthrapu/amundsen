@@ -61,7 +61,7 @@ def connection_string():
  
 def run_oracle_job():
     where_clause_suffix = textwrap.dedent("""
-        where c.owner = 'RSUTHRAP'
+        where c.owner = 'CIGADMIN'
     """)
      #CIGADMIN
     tmp_folder = '/var/tmp/amundsen/table_metadata'
@@ -71,7 +71,7 @@ def run_oracle_job():
     # xxxxxxx - Replace your Password .
     job_config = ConfigFactory.from_dict({
         f'extractor.oracle_metadata.{OracleMetadataExtractor.WHERE_CLAUSE_SUFFIX_KEY}': where_clause_suffix,
-        f'extractor.oracle_metadata.extractor.sqlalchemy.{SQLAlchemyExtractor.CONN_STRING}': 'oracle+cx_oracle://rsuthrap:xxxxxxx@rhqa1.ciginsurance.com:53759/?service_name=oscar&encoding=UTF-8&nencoding=UTF-8',
+        f'extractor.oracle_metadata.extractor.sqlalchemy.{SQLAlchemyExtractor.CONN_STRING}': 'oracle+cx_oracle://sqa06:testers@rhqa1.ciginsurance.com:53759/?service_name=oscar&encoding=UTF-8&nencoding=UTF-8',
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.NODE_DIR_PATH}': node_files_folder,
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.RELATION_DIR_PATH}': relationship_files_folder,
         f'loader.filesystem_csv_neo4j.{FsNeo4jCSVLoader.SHOULD_DELETE_CREATED_DIR}': True,
